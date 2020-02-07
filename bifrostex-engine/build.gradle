@@ -1,0 +1,65 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.3.61'
+    id 'application'
+    id 'java'
+    id 'org.springframework.boot' version "2.2.2.RELEASE"
+    id 'io.spring.dependency-management' version "1.0.8.RELEASE"
+    id "org.jetbrains.kotlin.plugin.spring" version "1.3.61"
+    id "org.jetbrains.kotlin.plugin.allopen" version "1.3.61"
+}
+
+group 'cn.kherrisan.bifrostex'
+version '1.0-SNAPSHOT'
+
+mainClassName = 'cn.kherrisan.bifrostex_engine.MainKt'
+
+ext {
+    vertxVersion = '3.8.3'
+    ktormVersion = '2.6'
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    runtimeOnly("org.springframework.boot:spring-boot-devtools")
+
+    compile "io.vertx:vertx-redis-client:$vertxVersion"
+    compile "io.vertx:vertx-mongo-client:$vertxVersion"
+    compile "io.vertx:vertx-lang-kotlin-coroutines:$vertxVersion"
+    compile "org.telegram:telegrambots:4.6"
+    compile "org.telegram:telegrambots-abilities:4.6"
+    compile "me.liuwj.ktorm:ktorm-core:$ktormVersion"
+
+    compile project(":bifrostex-client")
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    implementation "org.springframework.boot:spring-boot-starter-web"
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'cn.kherrisan.bifrostex_engine.MainKt'
+    }
+}
+
+allOpen {
+    annotation("javax.persistence.Entity")
+    annotation("javax.persistence.Embeddable")
+    annotation("javax.persistence.MappedSuperclass")
+}
+
+tasks.matching { it instanceof Test }.all {
+    testLogging.events = ["failed", "passed", "skipped"]
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}

@@ -1,0 +1,4 @@
+allprojects {
+    group 'cn.kherrisan.bifrostex'
+    version '1.0-SNAPSHOT'
+}

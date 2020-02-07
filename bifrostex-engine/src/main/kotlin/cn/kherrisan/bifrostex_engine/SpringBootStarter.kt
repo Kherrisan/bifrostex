@@ -1,0 +1,7 @@
+package cn.kherrisan.bifrostex_engine
+
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories
+
+@SpringBootApplication
+class SpringBootStarter
