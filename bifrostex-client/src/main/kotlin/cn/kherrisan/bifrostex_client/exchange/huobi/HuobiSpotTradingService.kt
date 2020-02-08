@@ -193,19 +193,23 @@ class HuobiSpotTradingService(service: HuobiService) : AbstractSpotTradingServic
      * @param symbol Symbol
      * @param start Date 最多为今天前180天
      * @param end Date 与start组成查询窗口，窗口最大长度为2天
-     * @param state OrderStateEnum
+     * @param state OrderStateEnum?
      * @param size Int 查询记录个数
      * @return List<SpotOrder>
      */
     override suspend fun getOrders(symbol: Symbol, start: Date, end: Date, state: OrderStateEnum?, size: Int): List<SpotOrder> {
-        state ?: error("State for getOrders can't be null.")
+//        state ?: error("State for getOrders can't be null.")
         val params = mutableMapOf(
                 "symbol" to string(symbol),
                 "start-date" to orderDateString(start),
                 "end-date" to orderDateString(end),
                 "size" to "$size"
         )
-        state?.let { params["states"] = string(it) }
+        if (state == null) {
+            params["states"] = OrderStateEnum.values().map { string(it) }.joinToString(",")
+        } else {
+            params["states"] = string(state)
+        }
         val subPath = buildSignedSubpath("/v1/order/orders", GET, params as MutableMap<String, Any>)
         val resp = get(authUrl(subPath))
         val obj = jsonObject(resp)

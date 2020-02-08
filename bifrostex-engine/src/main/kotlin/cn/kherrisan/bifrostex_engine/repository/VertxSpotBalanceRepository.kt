@@ -3,7 +3,6 @@ package cn.kherrisan.bifrostex_engine.repository
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.entity.Currency
 import cn.kherrisan.bifrostex_engine.ExchangeSpotBalance
-import cn.kherrisan.bifrostex_engine.SpotBalanceRepository
 import io.vertx.core.Vertx
 import io.vertx.kotlin.coroutines.awaitBlocking
 import org.springframework.beans.factory.annotation.Autowired

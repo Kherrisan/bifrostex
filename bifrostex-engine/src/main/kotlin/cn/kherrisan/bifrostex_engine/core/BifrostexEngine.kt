@@ -28,7 +28,15 @@ object BifrostexEngine {
                 "                                                 \n" +
                 "                                                 ")
         runApplication<SpringBootStarter>()
+        deployTelegram()
+    }
+
+    private fun deployTelegram() {
         TelegramMessager
         vertx.deployVerticle(SpringContainer[TelegramVerticle::class.java])
+    }
+
+    private fun executeInitTask(){
+
     }
 }

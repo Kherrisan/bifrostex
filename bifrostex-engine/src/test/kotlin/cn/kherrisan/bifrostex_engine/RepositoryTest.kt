@@ -3,6 +3,9 @@ package cn.kherrisan.bifrostex_engine
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.entity.BTC
 import cn.kherrisan.bifrostex_engine.enumeration.TransactionType
+import cn.kherrisan.bifrostex_engine.repository.SpotBalanceRepository
+import cn.kherrisan.bifrostex_engine.repository.SpotOrderRepository
+import cn.kherrisan.bifrostex_engine.repository.TransactionRepository
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired

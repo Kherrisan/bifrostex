@@ -26,5 +26,7 @@ data class RuntimeConfiguration(
 
         var pingInterval: Int? = null,
 
-        var pingTimeout: Int? = null
+        var pingTimeout: Int? = null,
+
+
 )

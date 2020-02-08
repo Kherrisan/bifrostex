@@ -2,6 +2,7 @@ package cn.kherrisan.bifrostex_engine
 
 import cn.kherrisan.bifrostex_client.core.common.MyDate
 import cn.kherrisan.bifrostex_client.entity.Currency
+import cn.kherrisan.bifrostex_client.entity.Symbol
 import cn.kherrisan.bifrostex_engine.core.AutoIncrement
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
@@ -12,7 +13,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions
 import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener
 import org.springframework.data.mongodb.core.mapping.event.BeforeConvertEvent
-import org.springframework.data.mongodb.core.mapping.event.BeforeSaveEvent
 import org.springframework.data.mongodb.core.query.Criteria.where
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
@@ -22,13 +22,27 @@ import java.util.*
 
 @Configuration
 class MongoConfig {
-
     @Bean
     fun customConversions(): MongoCustomConversions = MongoCustomConversions(listOf(
             MyDateReadingConverter(),
             CurrencyReadingConverter(),
-            CurrencyWritingConverter()
+            CurrencyWritingConverter(),
+            SymbolReadingConverter(),
+            SymbolWritingConverter()
     ))
+}
+
+class SymbolWritingConverter : Converter<Symbol, String> {
+    override fun convert(source: Symbol): String? = source.name()
+}
+
+class SymbolReadingConverter : Converter<String, Symbol> {
+    override fun convert(source: String): Symbol? {
+        if (source.contains("/"))
+            return null
+        val mid = source.indexOf("/")
+        return Symbol(source.substring(0, mid), source.substring(mid + 1))
+    }
 }
 
 class CurrencyWritingConverter : Converter<Currency, String> {

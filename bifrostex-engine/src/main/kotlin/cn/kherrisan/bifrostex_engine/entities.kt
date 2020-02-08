@@ -35,24 +35,40 @@ data class ExchangeSpotBalance @PersistenceConstructor constructor(
             : this(ex, sb.currency, sb.free, sb.frozen, sb.time)
 }
 
+/**
+ *
+ * @property oid Long
+ * @property exchange ExchangeName
+ * @property exOid String
+ * @property symbol Symbol
+ * @property time Date
+ * @property amount BigDecimal
+ * @property price BigDecimal
+ * @property side OrderSideEnum
+ * @property type OrderTypeEnum
+ * @property state OrderStateEnum
+ * @property bfr Boolean
+ * @constructor
+ */
 @Document(MONGO_EXCHANGE_SPOT_ORDER)
 data class ExchangeSpotOrder @PersistenceConstructor constructor(
         @AutoIncrement @Id val oid: Long,
         @Indexed val exchange: ExchangeName,
         val exOid: String,
         @Indexed val symbol: Symbol,
-        val createTime: Date,
+        val time: Date,
         @Decimal128 val amount: BigDecimal,
         @Decimal128 val price: BigDecimal,
         @Indexed val side: OrderSideEnum,
         val type: OrderTypeEnum,
-        val state: OrderStateEnum
+        val state: OrderStateEnum,
+        var bfr: Boolean
 ) {
-    constructor(exchange: ExchangeName, exId: String, symbol: Symbol, createTime: Date, amount: BigDecimal, price: BigDecimal, side: OrderSideEnum, type: OrderTypeEnum, state: OrderStateEnum)
-            : this(0, exchange, exId, symbol, createTime, amount, price, side, type, state)
+    constructor(exchange: ExchangeName, exId: String, symbol: Symbol, createTime: Date, amount: BigDecimal, price: BigDecimal, side: OrderSideEnum, type: OrderTypeEnum, state: OrderStateEnum, bfr: Boolean)
+            : this(0, exchange, exId, symbol, createTime, amount, price, side, type, state, bfr)
 
     constructor(exchange: ExchangeName, so: SpotOrder)
-            : this(exchange, so.oid, so.symbol, so.createTime, so.amount, so.price, so.side, so.type, so.state)
+            : this(exchange, so.oid, so.symbol, so.createTime, so.amount, so.price, so.side, so.type, so.state, false)
 }
 
 @Document("transaction")
