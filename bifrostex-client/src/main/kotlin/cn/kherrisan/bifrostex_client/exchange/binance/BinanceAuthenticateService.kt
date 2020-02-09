@@ -5,7 +5,11 @@ import cn.kherrisan.bifrostex_client.core.common.hmacSHA256Signature
 import cn.kherrisan.bifrostex_client.core.common.urlEncode
 import cn.kherrisan.bifrostex_client.core.http.AuthenticationService
 import org.apache.commons.codec.binary.Hex
+import org.springframework.context.annotation.Lazy
+import org.springframework.stereotype.Component
 
+@Component
+@Lazy
 class BinanceAuthenticateService : AuthenticationService {
 
     val apiKey = SpringContainer[BinanceService::class.java].runtimeConfig.apiKey

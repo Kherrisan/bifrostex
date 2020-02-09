@@ -2,6 +2,7 @@ package cn.kherrisan.bifrost_client.common
 
 import cn.kherrisan.bifrostex_client.BifrostexClient
 import cn.kherrisan.bifrostex_client.core.common.*
+import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
 import cn.kherrisan.bifrostex_client.core.service.SpotMarketService
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import io.vertx.core.Vertx
@@ -37,6 +38,6 @@ abstract class TestQueryMarketMethod {
         BifrostexClient.init()
         service = ExchangeFactory.build(name, rtConfig)
         spotMarketService = service.spotMarketService
-        metaInfo = (service.spotMarketService as AbstractServiceDataAdaptor).metaInfo
+        metaInfo = ((service.spotMarketService as AbstractSpotMarketService).dataAdaptor as AbstractServiceDataAdaptor).metaInfo
     }
 }

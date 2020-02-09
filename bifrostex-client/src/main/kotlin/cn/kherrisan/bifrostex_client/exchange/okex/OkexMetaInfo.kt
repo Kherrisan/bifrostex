@@ -5,4 +5,4 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 @Component
-class OkexMetaInfo @Autowired constructor(service: OkexService) : ExchangeMetaInfo(service)
+class OkexMetaInfo : ExchangeMetaInfo()

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 import javax.annotation.PostConstruct
 
 @Component
-class HuobiMetaInfo @Autowired constructor(service: HuobiService) : ExchangeMetaInfo(service) {
+class HuobiMetaInfo : ExchangeMetaInfo() {
 
     lateinit var accountIdMap: Map<AccountTypeEnum, String>
 }
