@@ -11,15 +11,12 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.*
 
-abstract class AbstractServiceDataAdaptor(val service: ExchangeService)
+abstract class AbstractServiceDataAdaptor(val metaInfo: ExchangeMetaInfo)
     : ServiceDataAdaptor {
 
     open val klinePeriodMap: Map<KlinePeriodEnum, String> = mapOf()
     open val orderStateMap: Map<String, OrderStateEnum> = mapOf()
     open val loanStateMap: Map<LoanStatusEnum, String> = mapOf()
-
-    val meta: ExchangeMetaInfo
-        get() = service.metaInfo
 
     override fun string(currency: Currency): String {
         return currency.name.toLowerCase()
@@ -156,18 +153,18 @@ abstract class AbstractServiceDataAdaptor(val service: ExchangeService)
     }
 
     override fun sizeIncrement(currency: Currency?): Int {
-        return service.metaInfo.currencyMetaInfo[currency]?.sizeIncrement ?: 4
+        return metaInfo.currencyMetaInfo[currency]?.sizeIncrement ?: 4
     }
 
     override fun sizeIncrement(symbol: Symbol?): Int {
-        return service.metaInfo.symbolMetaInfo[symbol]?.sizeIncrement ?: 4
+        return metaInfo.symbolMetaInfo[symbol]?.sizeIncrement ?: 4
     }
 
     override fun priceIncrement(symbol: Symbol?): Int {
-        return service.metaInfo.symbolMetaInfo[symbol]?.priceIncrement ?: 4
+        return metaInfo.symbolMetaInfo[symbol]?.priceIncrement ?: 4
     }
 
     override fun volumeIncrement(symbol: Symbol?): Int {
-        return service.metaInfo.symbolMetaInfo[symbol]?.volumeIncrement ?: 4
+        return metaInfo.symbolMetaInfo[symbol]?.volumeIncrement ?: 4
     }
 }

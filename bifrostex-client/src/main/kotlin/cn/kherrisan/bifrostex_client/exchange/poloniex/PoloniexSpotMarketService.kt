@@ -8,6 +8,9 @@ import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
 import com.google.gson.JsonElement
+import kotlinx.coroutines.CoroutineScope
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 
@@ -18,8 +21,12 @@ import java.util.*
  *
  * @constructor
  */
-class PoloniexSpotMarketService(service: PoloniexService) : AbstractSpotMarketService(service) {
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend (JsonElement, Subscription<T>) -> Unit): Subscription<T> {
+@Component
+class PoloniexSpotMarketService @Autowired constructor(
+        staticConfiguration: PoloniexStaticConfiguration,
+        dataAdaptor: PoloniexServiceDataAdaptor
+) : AbstractSpotMarketService(staticConfiguration, dataAdaptor) {
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
         throw NotImplementedError()
     }
 

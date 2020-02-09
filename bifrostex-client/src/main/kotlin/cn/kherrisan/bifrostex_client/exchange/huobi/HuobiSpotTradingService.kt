@@ -9,25 +9,40 @@ import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderTypeEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotTradingService
+import cn.kherrisan.bifrostex_client.core.websocket.Subscription
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import kotlinx.coroutines.runBlocking
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.annotation.PostConstruct
 
 /**
  * 火币现货交易服务实现类。
  *
  * @constructor
  */
-class HuobiSpotTradingService(service: HuobiService) : AbstractSpotTradingService(service) {
+@Component
+class HuobiSpotTradingService @Autowired constructor(
+        staticConfig: HuobiStaticConfiguration,
+        dataAdaptor: HuobiServiceDataAdaptor
+) : AbstractSpotTradingService(staticConfig, dataAdaptor, HuobiAuthenticateService(staticConfig.spotTradingHttpHost)) {
 
-    override suspend fun initialize() {
-        (service as HuobiService).accountIdMap = getAccountIds()
+    @Autowired
+    lateinit var metaInfo: HuobiMetaInfo
+
+    @PostConstruct
+    fun initAccountIdMap() {
+        runBlocking {
+            metaInfo.accountIdMap = getAccountIds()
+        }
     }
 
     override fun checkResponse(http: HttpResponse<Buffer>): JsonElement {
@@ -55,10 +70,9 @@ class HuobiSpotTradingService(service: HuobiService) : AbstractSpotTradingServic
     }
 
     override suspend fun createOrder(symbol: Symbol, price: BigDecimal, amount: BigDecimal, side: OrderSideEnum, type: OrderTypeEnum): TransactionResult {
-        awaitInitialization()
         val signedSubpath = buildSignedSubpath("/v1/order/orders/place", POST)
         val params = mutableMapOf<String, Any>(
-                "account-id" to (service as HuobiService).accountIdMap[AccountTypeEnum.SPOT]!!, // TODO:Get the account id
+                "account-id" to metaInfo.accountIdMap[AccountTypeEnum.SPOT]!!,
                 "symbol" to string(symbol),
                 "type" to "${side.toString().toLowerCase()}-${type.toString().toLowerCase()}",
                 "amount" to amount.toString(),
@@ -129,8 +143,7 @@ class HuobiSpotTradingService(service: HuobiService) : AbstractSpotTradingServic
     }
 
     override suspend fun getOpenOrders(symbol: Symbol, size: Int): List<SpotOrder> {
-        awaitInitialization()
-        val params = mapOf("account-id" to (service as HuobiService).accountIdMap[AccountTypeEnum.SPOT]!!,
+        val params = mapOf("account-id" to metaInfo.accountIdMap[AccountTypeEnum.SPOT]!!,
                 "symbol" to string(symbol),
                 "size" to "$size")
         val signedUrl = buildSignedSubpath("/v1/order/openOrders", GET, params as MutableMap<String, Any>)
@@ -233,10 +246,11 @@ class HuobiSpotTradingService(service: HuobiService) : AbstractSpotTradingServic
         val map = HashMap<AccountTypeEnum, String>()
         obj["data"].asJsonArray.map { it.asJsonObject }
                 .forEach {
+                    val id = it["id"].asLong.toString()
                     when (it["type"].asString) {
-                        "spot" -> map[AccountTypeEnum.SPOT] = it["id"].asLong.toString()
-                        "margin" -> map[AccountTypeEnum.MARGIN] = it["id"].asLong.toString()
-                        "super-margin" -> map[AccountTypeEnum.SUPERMARGIN] = it["id"].asLong.toString()
+                        "spot" -> map[AccountTypeEnum.SPOT] = id
+                        "margin" -> map[AccountTypeEnum.MARGIN] = id
+                        "super-margin" -> map[AccountTypeEnum.SUPERMARGIN] = id
                         else -> {
                             //忽略OTC、点卡账户
                         }
@@ -275,9 +289,7 @@ class HuobiSpotTradingService(service: HuobiService) : AbstractSpotTradingServic
     }
 
     override suspend fun getBalance(): Map<Currency, SpotBalance> {
-        //先等待service获得accountId
-        awaitInitialization()
-        val accountId = (service as HuobiService).accountIdMap[AccountTypeEnum.SPOT]
+        val accountId = metaInfo.accountIdMap[AccountTypeEnum.SPOT]
         val resp = signedGet(authUrl("/v1/account/accounts/${accountId}/balance"))
         val data = jsonObject(resp)["data"].asJsonObject
         val map = HashMap<Currency, SpotBalance>()
@@ -296,8 +308,16 @@ class HuobiSpotTradingService(service: HuobiService) : AbstractSpotTradingServic
                     }
                 }
         return map.filter {
-            service.metaInfo.currencyMetaInfo[it.key]?.validateSizeIncrement(it.value.free) ?: false ||
-                    service.metaInfo.currencyMetaInfo[it.key]?.validateSizeIncrement(it.value.frozen) ?: false
+            metaInfo.currencyMetaInfo[it.key]?.validateSizeIncrement(it.value.free) ?: false ||
+                    metaInfo.currencyMetaInfo[it.key]?.validateSizeIncrement(it.value.frozen) ?: false
         }
+    }
+
+    override suspend fun subscribeBalance(symbol: Symbol): Subscription<SpotBalance> {
+        return super.subscribeBalance(symbol)
+    }
+
+    override suspend fun subscribeOrder(symbol: Symbol): Subscription<SpotOrder> {
+        return super.subscribeOrder(symbol)
     }
 }

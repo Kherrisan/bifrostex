@@ -13,12 +13,20 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import kotlinx.coroutines.CoroutineScope
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 
-class OkexSpotMarketService(service: OkexService) : AbstractSpotMarketService(service) {
+@Component
+class OkexSpotMarketService @Autowired constructor(
+        staticConfiguration: OkexStaticConfiguration,
+        dataAdaptor: OkexServiceDataAdaptor
+) : AbstractSpotMarketService(staticConfiguration, dataAdaptor) {
 
-    val auth = OkexAuthenticateService(service)
+    @Autowired
+    private lateinit var auth: OkexAuthenticateService
 
     override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
         val obj = JsonParser.parseString(resp.bodyAsString())
@@ -160,7 +168,7 @@ class OkexSpotMarketService(service: OkexService) : AbstractSpotMarketService(se
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend (JsonElement, Subscription<T>) -> Unit): Subscription<T> {
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
         val subscription = Subscription<T>(channel, dispatcher, resolver)
         subscription.subPacket = { Gson().toJson(mapOf("op" to "subscribe", "args" to listOf(channel))) }
         subscription.unsubPacket = { Gson().toJson(mapOf("op" to "unsubscribe", "args" to listOf(channel))) }

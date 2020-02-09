@@ -1,26 +1,41 @@
 package cn.kherrisan.bifrostex_client.exchange.kucoin
 
+import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.iid
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.Gson
 import com.google.gson.JsonParser
+import io.vertx.core.Vertx
 import io.vertx.kotlin.coroutines.awaitEvent
-import kotlinx.coroutines.GlobalScope
+import io.vertx.kotlin.coroutines.dispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
 
-class KucoinWebsocketDispatcher(service: KucoinService) : WebsocketDispatcher(service) {
+@Component
+class KucoinWebsocketDispatcher : WebsocketDispatcher() {
+
+    @Autowired
+    private lateinit var service: KucoinService
+
+    @Autowired
+    private lateinit var vertx: Vertx
+
+    override val host: String = ""
+    override val name: ExchangeName = ExchangeName.KUCOIN
 
     val idMap = HashMap<Int, String>()
 
-    private suspend fun resetPingTimer() {
-        GlobalScope.launch {
-            awaitEvent<Long> { vertx.setTimer(service.rtConfig.pingInterval!!.toLong(), it) }
+    private suspend fun CoroutineScope.resetPingTimer() {
+        launch(vertx.dispatcher()) {
+            awaitEvent<Long> { vertx.setTimer(service.runtimeConfig.pingInterval!!.toLong(), it) }
             send(Gson().toJson(mapOf("id" to iid(), "type" to "ping")))
         }
     }
 
-    override suspend fun dispatch(bytes: ByteArray) {
+    override suspend fun CoroutineScope.dispatch(bytes: ByteArray) {
         val clear = bytes.toString(StandardCharsets.UTF_8)
 //        logger.debug(clear)
         val obj = JsonParser.parseString(clear).asJsonObject
@@ -30,16 +45,16 @@ class KucoinWebsocketDispatcher(service: KucoinService) : WebsocketDispatcher(se
             "ack" -> {
                 val ch = idMap[obj["id"].asString.toInt()]!!
                 if (subMap[ch]!!.isSubscribed) {
-                    triggerUnsubscribed(ch)
+                    triggerUnsubscribedEvent(ch)
                 } else {
-                    triggerSubscribed(ch)
+                    triggerSubscribedEvent(ch)
                 }
                 idMap.remove(obj["id"].asString.toInt())
             }
             "message" -> {
                 val ch = obj["topic"].asString
                 val sub = subMap[ch]!!
-                sub.resolver(obj, sub)
+                sub.resolver(this, obj, sub)
             }
         }
     }

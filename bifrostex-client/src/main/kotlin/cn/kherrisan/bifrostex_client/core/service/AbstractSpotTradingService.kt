@@ -1,33 +1,41 @@
 package cn.kherrisan.bifrostex_client.core.service
 
-import cn.kherrisan.bifrostex_client.core.common.AbstractInitializer
-import cn.kherrisan.bifrostex_client.core.common.ExchangeService
+import cn.kherrisan.bifrostex_client.core.common.ExchangeStaticConfiguration
 import cn.kherrisan.bifrostex_client.core.common.ServiceDataAdaptor
 import cn.kherrisan.bifrostex_client.core.common.SpotTradingService
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderTypeEnum
+import cn.kherrisan.bifrostex_client.core.http.AuthenticationService
 import cn.kherrisan.bifrostex_client.core.http.DefaultSignedHttpService
 import cn.kherrisan.bifrostex_client.core.http.SignedHttpService
-import cn.kherrisan.bifrostex_client.entity.Currency
-import cn.kherrisan.bifrostex_client.entity.Symbol
-import cn.kherrisan.bifrostex_client.entity.TransactionResult
+import cn.kherrisan.bifrostex_client.core.websocket.Subscription
+import cn.kherrisan.bifrostex_client.entity.*
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import org.apache.logging.log4j.LogManager
 import java.math.BigDecimal
 import java.nio.charset.StandardCharsets
 
-abstract class AbstractSpotTradingService(val service: ExchangeService) :
-        AbstractInitializer(service)
-        , SpotTradingService
-        , SignedHttpService by DefaultSignedHttpService(service)
-        , ServiceDataAdaptor by service.buildDataAdaptor() {
+abstract class AbstractSpotTradingService(
+        val staticConfig: ExchangeStaticConfiguration,
+        val dataAdaptor: ServiceDataAdaptor,
+        val authenticationService: AuthenticationService
+) : SpotTradingService
+        , SignedHttpService by DefaultSignedHttpService(authenticationService)
+        , ServiceDataAdaptor by dataAdaptor {
 
-    override suspend fun allInitialize() {
-        initialize()
+    val logger = LogManager.getLogger()
+
+    override suspend fun subscribeBalance(symbol: Symbol): Subscription<SpotBalance> {
+        throw NotImplementedError()
+    }
+
+    override suspend fun subscribeOrder(symbol: Symbol): Subscription<SpotOrder> {
+        throw NotImplementedError()
     }
 
     override suspend fun transferToMargin(currency: Currency, amount: BigDecimal, symbol: Symbol): TransactionResult {
@@ -65,6 +73,6 @@ abstract class AbstractSpotTradingService(val service: ExchangeService) :
         if (path.startsWith("http")) {
             return path
         }
-        return "${service.authHttpHost}$path"
+        return "${staticConfig.spotTradingHttpHost}$path"
     }
 }

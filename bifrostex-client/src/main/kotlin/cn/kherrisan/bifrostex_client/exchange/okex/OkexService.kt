@@ -8,33 +8,23 @@ import cn.kherrisan.bifrostex_client.core.service.MarginTradingService
 import cn.kherrisan.bifrostex_client.core.service.SpotMarketService
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import io.vertx.core.Vertx
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Lazy
+import org.springframework.stereotype.Component
 
-class OkexService(vertx: Vertx) : ExchangeService(vertx) {
-    override var publicHttpHost: String = "https://www.okex.com"
-    override var publicWsHost: String = "wss://real.okex.com:8443/ws/v3"
-    override var authHttpHost: String = "https://www.okex.com"
+@Component
+@Lazy
+class OkexService : ExchangeService() {
 
-    override fun buildAuthenticationService(): AuthenticationService {
-        return OkexAuthenticateService(this)
-    }
+    @Autowired
+    @Lazy
+    override lateinit var spotMarketService: OkexSpotMarketService
 
-    override fun buildSpotTradingService(): SpotTradingService {
-        return OkexSpotTradingService(this)
-    }
+    @Autowired
+    @Lazy
+    override lateinit var  spotTradingService: OkexSpotTradingService
 
-    override fun buildWebsocketDispatcher(): WebsocketDispatcher {
-        return OkexWebsocketDispatcher(this)
-    }
-
-    override fun buildSpotMarketService(): SpotMarketService {
-        return OkexSpotMarketService(this)
-    }
-
-    override fun buildDataAdaptor(): ServiceDataAdaptor {
-        return OkexServiceDataAdaptor(this)
-    }
-
-    override fun buildMarginTradingService(): MarginTradingService {
-        return OkexMarginTradingService(this)
-    }
+    @Autowired
+    @Lazy
+    override lateinit var  marginTradingService: OkexMarginTradingService
 }

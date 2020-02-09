@@ -1,22 +1,32 @@
 package cn.kherrisan.bifrostex_client.exchange.okex
 
+import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.d64ungzip
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.JsonParser
+import io.vertx.core.Vertx
 import io.vertx.kotlin.coroutines.dispatcher
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 
 const val PING_PERIOD = 20_1000L
 
-class OkexWebsocketDispatcher(service: OkexService) : WebsocketDispatcher(service) {
+@Component
+class OkexWebsocketDispatcher(val staticConfiguration: OkexStaticConfiguration) : WebsocketDispatcher() {
 
+    override val host: String = staticConfiguration.spotMarketWsHost
+    override val name: ExchangeName = ExchangeName.OKEX
     private var receivedInPeriod = false
 
-    fun resetPingTimer() {
-        GlobalScope.launch(vertx.dispatcher()) {
+    @Autowired
+    private lateinit var vertx: Vertx
+
+    fun CoroutineScope.resetPingTimer() {
+        launch(vertx.dispatcher()) {
             receivedInPeriod = false
             delay(PING_PERIOD)
             if (!receivedInPeriod) {
@@ -29,7 +39,7 @@ class OkexWebsocketDispatcher(service: OkexService) : WebsocketDispatcher(servic
         }
     }
 
-    override suspend fun dispatch(bytes: ByteArray) {
+    override suspend fun CoroutineScope.dispatch(bytes: ByteArray) {
         receivedInPeriod = true
         val clear = d64ungzip(bytes)
         if (clear == "pong") {
@@ -41,9 +51,9 @@ class OkexWebsocketDispatcher(service: OkexService) : WebsocketDispatcher(servic
             val evt = obj["event"].asString
             val ch = obj["channel"].asString
             if (evt == "subscribe") {
-                triggerSubscribed(ch)
+                triggerSubscribedEvent(ch)
             } else {
-                triggerUnsubscribed(ch)
+                triggerUnsubscribedEvent(ch)
             }
         } else {
             val table = obj["table"].asString
@@ -53,7 +63,7 @@ class OkexWebsocketDispatcher(service: OkexService) : WebsocketDispatcher(servic
                     .forEach {
                         // deliver the data
                         val sub = subMap[it] as Subscription
-                        sub.resolver(obj, sub)
+                        sub.resolver(this, obj, sub)
                     }
         }
         resetPingTimer()

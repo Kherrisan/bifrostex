@@ -1,8 +1,11 @@
 package cn.kherrisan.bifrostex_client
 
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.runApplication
+
 fun main(args: Array<String>) {
-    val vertx = io.vertx.core.Vertx.vertx()
-    vertx.setTimer(4000) {
-        println("Hello World")
-    }
+    runApplication<SpringStarter>()
 }
+
+@SpringBootApplication
+class SpringStarter

@@ -1,26 +1,39 @@
 package cn.kherrisan.bifrostex_client.exchange.binance
 
+import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.Promise
+import io.vertx.core.Vertx
+import kotlinx.coroutines.CoroutineScope
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
 
-open class BinanceWebsocketDispatcher(service: BinanceService) : WebsocketDispatcher(service) {
+@Component
+open class BinanceWebsocketDispatcher @Autowired constructor(staticConfig: BinanceStaticConfiguration)
+    : WebsocketDispatcher() {
+
+    override val host: String = staticConfig.spotMarketWsHost
+    override val name: ExchangeName = ExchangeName.BINANCE
 
     val idMap = HashMap<Int, String>()
     var pongTimer: Long? = null
     var pongPromise: Promise<Any>? = null
+
+    @Autowired
+    private lateinit var vertx: Vertx
 
     override suspend fun handleCommandResponse(elem: JsonElement) {
         val obj = elem.asJsonObject
         val ch = idMap[obj["id"].asInt]!!
         idMap.remove(obj["id"].asInt)
         if (!subMap[ch]!!.isSubscribed) {
-            triggerSubscribed(ch)
+            triggerSubscribedEvent(ch)
         } else {
-            triggerUnsubscribed(ch)
+            triggerUnsubscribedEvent(ch)
         }
     }
 
@@ -47,7 +60,7 @@ open class BinanceWebsocketDispatcher(service: BinanceService) : WebsocketDispat
         return false
     }
 
-    override suspend fun dispatch(bytes: ByteArray) {
+    override suspend fun CoroutineScope.dispatch(bytes: ByteArray) {
         if (handlePing(bytes)) {
             return
         }
@@ -68,7 +81,7 @@ open class BinanceWebsocketDispatcher(service: BinanceService) : WebsocketDispat
                 }
                 val ch = "$s@$e".toLowerCase()
                 val sub = subMap[ch] as Subscription
-                sub.resolver(obj, sub)
+                sub.resolver(this, obj, sub)
             } catch (exception: Exception) {
                 logger.error(exception)
                 logger.error(obj)

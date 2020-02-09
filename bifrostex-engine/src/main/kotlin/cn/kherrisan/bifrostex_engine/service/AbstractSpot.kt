@@ -174,19 +174,10 @@ abstract class AbstractSpot(
     }
 
     override suspend fun CoroutineScope.subscribeBalance(symbol: Symbol): Job {
-        return launch {
-            while (true) {
-                getBalance(BTC)
-                delay(5000)
-            }
-        }
+        throw NotImplementedError()
     }
 
     override suspend fun CoroutineScope.subscribeOrder(symbol: Symbol): Job {
-        return launch {
-            while (true) {
-                delay(5000)
-            }
-        }
+        throw NotImplementedError()
     }
 }

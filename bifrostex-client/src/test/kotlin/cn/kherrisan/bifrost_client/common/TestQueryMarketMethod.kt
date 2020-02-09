@@ -1,13 +1,10 @@
 package cn.kherrisan.bifrost_client.common
 
-import cn.kherrisan.bifrostex_client.core.common.ExchangeFactory
-import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.common.ExchangeService
-import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
+import cn.kherrisan.bifrostex_client.BifrostexClient
+import cn.kherrisan.bifrostex_client.core.common.*
 import cn.kherrisan.bifrostex_client.core.service.SpotMarketService
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import io.vertx.core.Vertx
-import kotlinx.coroutines.runBlocking
 import org.apache.logging.log4j.LogManager
 import org.testng.annotations.BeforeClass
 
@@ -33,13 +30,13 @@ abstract class TestQueryMarketMethod {
     lateinit var service: ExchangeService
     val vertx = Vertx.vertx()
     lateinit var spotMarketService: SpotMarketService
+    lateinit var metaInfo: ExchangeMetaInfo
 
     @BeforeClass
     fun init() {
-        service = ExchangeFactory.build(name, vertx, rtConfig)
+        BifrostexClient.init()
+        service = ExchangeFactory.build(name, rtConfig)
         spotMarketService = service.spotMarketService
-        runBlocking {
-            service.awaitInitialization()
-        }
+        metaInfo = (service.spotMarketService as AbstractServiceDataAdaptor).metaInfo
     }
 }

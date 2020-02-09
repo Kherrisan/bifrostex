@@ -14,16 +14,21 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.*
 
-class HuobiMarginTradingService(service: HuobiService)
-    : AbstractMarginTradingService(service) {
+@Component
+class HuobiMarginTradingService(
+        staticConfig: HuobiStaticConfiguration,
+        dataAdaptor: HuobiServiceDataAdaptor,
+        authenticateService: HuobiAuthenticateService
+) : AbstractMarginTradingService(staticConfig, dataAdaptor, authenticateService) {
 
-    override suspend fun initialize() {
-        (service as HuobiService).accountIdMap = (spot as HuobiSpotTradingService).getAccountIds()
-    }
+    @Autowired
+    private lateinit var spot: HuobiSpotTradingService
 
     override fun string(date: Date): String {
         return D_FORMAT.format(date)

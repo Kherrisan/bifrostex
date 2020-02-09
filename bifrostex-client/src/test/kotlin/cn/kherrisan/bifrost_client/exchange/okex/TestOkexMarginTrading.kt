@@ -37,7 +37,7 @@ class TestOkexMarginTrading : TestMarginTradingMethod() {
         val orders = marginTradingService.getLoanOrders(BTC_USDT, status = LoanStatusEnum.REPAYED)
         orders.forEach {
             logger.info(it)
-            val meta = exchangeService.metaInfo.currencyMetaInfo[it.currency]!!
+            val meta = metaInfo.currencyMetaInfo[it.currency]!!
             assert(it.amount.scale() == meta.sizeIncrement)
             assert(it.interest.scale() == meta.sizeIncrement)
         }
@@ -51,7 +51,7 @@ class TestOkexMarginTrading : TestMarginTradingMethod() {
             logger.info(it.value)
             val sym = it.key
             val balance = it.value
-            val meta = exchangeService.metaInfo
+            val meta = metaInfo
             assert(balance.flatPrice.scale() == meta.symbolMetaInfo[sym]!!.priceIncrement)
             val base = balance.base
             assert(base.available.scale() == meta.currencyMetaInfo[base.currency]!!.sizeIncrement)

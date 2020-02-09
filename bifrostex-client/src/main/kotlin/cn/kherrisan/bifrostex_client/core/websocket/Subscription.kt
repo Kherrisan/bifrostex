@@ -4,12 +4,13 @@ import com.google.gson.JsonElement
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.kotlin.coroutines.await
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.delay
 import org.apache.commons.collections.buffer.CircularFifoBuffer
 
-class Subscription<T : Any>(val channel: String, val dispatcher: WebsocketDispatcher, var resolver: suspend (JsonElement, Subscription<T>) -> Unit) {
+class Subscription<T : Any>(val channel: String, val dispatcher: WebsocketDispatcher, var resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit) {
 
     private lateinit var subscribePromise: Promise<Any>
     private lateinit var unsubscribePromise: Promise<Any>
@@ -78,7 +79,7 @@ class Subscription<T : Any>(val channel: String, val dispatcher: WebsocketDispat
         subscribePromise.complete()
     }
 
-    fun triggerUnsubscribed() {
+    fun triggerUnsubscribedEvent() {
         unsubscribePromise.complete()
     }
 

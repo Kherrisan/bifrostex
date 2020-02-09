@@ -1,6 +1,9 @@
 package cn.kherrisan.bifrostex_client.core.service
 
-import cn.kherrisan.bifrostex_client.core.common.*
+import cn.kherrisan.bifrostex_client.core.common.ExchangeStaticConfiguration
+import cn.kherrisan.bifrostex_client.core.common.HttpUtils
+import cn.kherrisan.bifrostex_client.core.common.IHttpUtils
+import cn.kherrisan.bifrostex_client.core.common.ServiceDataAdaptor
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpService
 import cn.kherrisan.bifrostex_client.core.http.VertxHttpService
@@ -10,24 +13,33 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import kotlinx.coroutines.CoroutineScope
+import org.apache.logging.log4j.LogManager
+import org.springframework.beans.factory.annotation.Autowired
 import java.nio.charset.StandardCharsets
 
-abstract class AbstractSpotMarketService(var service: ExchangeService) :
-        AbstractInitializer(service)
-        , SpotMarketService
+abstract class AbstractSpotMarketService(val staticConfig: ExchangeStaticConfiguration,
+                                         val dataAdaptor: ServiceDataAdaptor)
+    : SpotMarketService
         , HttpService
-        , ServiceDataAdaptor by service.buildDataAdaptor()
+        , ServiceDataAdaptor by dataAdaptor
         , IHttpUtils by HttpUtils() {
 
-    open val dispatcher: WebsocketDispatcher
-        get() = service.dispatcher
+    /**
+     * Websocket 消息发送和分发器，子类覆盖时必须 Autowired
+     */
+    open val dispatcher: WebsocketDispatcher = throw NotImplementedError()
 
-    private val http = VertxHttpService(service.vertx)
+    @Autowired
+    val http: VertxHttpService
 
-    override suspend fun allInitialize() {
-        initialize()
+    val logger = LogManager.getLogger()
+
+    public fun publicUrl(subPath: String): String {
+        return "${staticConfig.spotMarketHttpHost}${subPath}"
     }
 
     override suspend fun get(path: String, params: Map<String, String>?, headers: Map<String, String>?): HttpResponse<Buffer> {
@@ -40,13 +52,6 @@ abstract class AbstractSpotMarketService(var service: ExchangeService) :
 
     override suspend fun delete(path: String, httpMediaTypeEnum: HttpMediaTypeEnum, params: Map<String, Any>?, headers: Map<String, String>?): HttpResponse<Buffer> {
         return http.delete(path, httpMediaTypeEnum, params, headers)
-    }
-
-    open fun publicUrl(path: String): String {
-        if (path.startsWith("http")) {
-            return path
-        }
-        return "${service.publicHttpHost}$path"
     }
 
     fun jsonObject(resp: HttpResponse<Buffer>): JsonObject {
@@ -64,9 +69,9 @@ abstract class AbstractSpotMarketService(var service: ExchangeService) :
         return JsonParser.parseString(t)
     }
 
-    open fun <T : Any> newSubscription(channel: String, resolver: suspend (JsonElement, Subscription<T>) -> Unit): Subscription<T> {
+    open fun <T : Any> newSubscription(channel: String, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
         return newSubscription(channel, dispatcher, resolver)
     }
 
-    abstract fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend (JsonElement, Subscription<T>) -> Unit): Subscription<T>
+    abstract fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T>
 }

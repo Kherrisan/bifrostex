@@ -7,9 +7,14 @@ import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.entity.Symbol
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.util.*
 
-class BinanceServiceDataAdaptor(service: BinanceService) : AbstractServiceDataAdaptor(service) {
+@Component
+class BinanceServiceDataAdaptor @Autowired constructor(
+    metaInfo: BinanceMetaInfo
+) : AbstractServiceDataAdaptor(metaInfo) {
     override val klinePeriodMap: Map<KlinePeriodEnum, String> = mapOf(
             KlinePeriodEnum._1MIN to "1m",
             KlinePeriodEnum._3MIN to "3m",
@@ -62,7 +67,7 @@ class BinanceServiceDataAdaptor(service: BinanceService) : AbstractServiceDataAd
     }
 
     override fun symbol(str: String): Symbol {
-        return Symbol.parse(str, service.metaInfo.currencyList)
+        return Symbol.parse(str, metaInfo.currencyList)
     }
 
     override fun date(str: String): Date {

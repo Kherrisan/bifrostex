@@ -7,10 +7,13 @@ import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import com.google.gson.JsonElement
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 
-class KucoinSerivceDataAdaptor(service: KucoinService) : AbstractServiceDataAdaptor(service) {
+@Component
+class KucoinSerivceDataAdaptor @Autowired constructor(metaInfo: KucoinMetaInfo) : AbstractServiceDataAdaptor(metaInfo) {
 
     override val klinePeriodMap: Map<KlinePeriodEnum, String> = mapOf(
             KlinePeriodEnum._1MIN to "1min",

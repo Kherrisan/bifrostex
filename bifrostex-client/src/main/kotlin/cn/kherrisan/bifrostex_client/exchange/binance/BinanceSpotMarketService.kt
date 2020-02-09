@@ -12,17 +12,28 @@ import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.Promise
+import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
 import io.vertx.kotlin.coroutines.dispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-class BinanceSpotMarketService(service: BinanceService) : AbstractSpotMarketService(service) {
+@Component
+class BinanceSpotMarketService @Autowired constructor(
+        staticConfiguration: BinanceStaticConfiguration,
+        dataAdaptor: BinanceServiceDataAdaptor
+) : AbstractSpotMarketService(staticConfiguration, dataAdaptor) {
+
+    @Autowired
+    private lateinit var vertx: Vertx
 
     override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
         val obj = JsonParser.parseString(resp.bodyAsString())
@@ -146,7 +157,7 @@ class BinanceSpotMarketService(service: BinanceService) : AbstractSpotMarketServ
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend (JsonElement, Subscription<T>) -> Unit): Subscription<T> {
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
         val subscription = Subscription(channel, dispatcher, resolver)
         subscription.subPacket = {
             val id = iid().toInt()
@@ -180,7 +191,7 @@ class BinanceSpotMarketService(service: BinanceService) : AbstractSpotMarketServ
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
         var baseDepthPromise = Promise.promise<SequentialDepth>()
         val ch = "${symbol.nameWithoutSlash()}@depth@100ms"
-        val dedicatedDispatcher = BinanceSingleChannelDispatcher(service as BinanceService, ch)
+        val dedicatedDispatcher = BinanceSingleChannelDispatcher(staticConfig as BinanceStaticConfiguration, ch)
         val sub = newSubscription<Depth>(ch, dedicatedDispatcher) { it, sub ->
             try {
                 val obj = it.asJsonObject
@@ -219,7 +230,7 @@ class BinanceSpotMarketService(service: BinanceService) : AbstractSpotMarketServ
                             baseDepth.seq = i.seq
                         } else {
                             //增量数据不连续
-                            GlobalScope.launch(service.vertx.dispatcher()) {
+                            launch(vertx.dispatcher()) {
                                 baseDepthPromise = Promise.promise()
                                 val newBaseDepth = getDepths(symbol, 1000) as SequentialDepth
                                 baseDepthPromise.complete(newBaseDepth)
@@ -241,7 +252,7 @@ class BinanceSpotMarketService(service: BinanceService) : AbstractSpotMarketServ
 
     override suspend fun subscribeDepthSnapshot(symbol: Symbol): Subscription<Depth> {
         val ch = "${symbol.nameWithoutSlash()}@depth5"
-        val dispatcher = BinanceSingleChannelDispatcher(service as BinanceService, ch)
+        val dispatcher = BinanceSingleChannelDispatcher(staticConfig as BinanceStaticConfiguration, ch)
         return newSubscription<Depth>(ch, dispatcher) { resp, sub ->
             sub.deliver(depth(symbol, resp.asJsonObject))
         }.subscribe()

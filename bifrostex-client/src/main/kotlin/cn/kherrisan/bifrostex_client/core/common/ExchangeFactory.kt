@@ -1,11 +1,22 @@
 package cn.kherrisan.bifrostex_client.core.common
 
-import io.vertx.core.Vertx
-
+/**
+ * ExchangeService 工厂类
+ *
+ * 这个类不需要 Spring 进行管理
+ */
 object ExchangeFactory {
-    fun build(name: ExchangeName = ExchangeName.HUOBI, vertx: Vertx = Vertx.vertx(), config: RuntimeConfiguration = RuntimeConfiguration()): ExchangeService {
-        val service = name.exchangeServiceClass.getConstructor(Vertx::class.java).newInstance(vertx)
-        service.rtConfig = config
+
+    /**
+     * ExchangeService 工厂方法
+     *
+     * @param name ExchangeName
+     * @param config RuntimeConfiguration
+     * @return ExchangeService
+     */
+    fun build(name: ExchangeName = ExchangeName.HUOBI, config: RuntimeConfiguration = RuntimeConfiguration()): ExchangeService {
+        val service = SpringContainer[name.exchangeServiceClass]
+        service.runtimeConfig = config
         service.name = name
         return service
     }

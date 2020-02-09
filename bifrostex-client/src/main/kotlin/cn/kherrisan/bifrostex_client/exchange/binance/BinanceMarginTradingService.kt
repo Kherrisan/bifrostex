@@ -10,6 +10,8 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 
@@ -20,7 +22,12 @@ import java.util.*
  *
  * @constructor
  */
-class BinanceMarginTradingService(service: BinanceService) : AbstractMarginTradingService(service) {
+@Component
+class BinanceMarginTradingService @Autowired constructor(
+        staticConfig: BinanceStaticConfiguration,
+        dataAdaptor: BinanceServiceDataAdaptor,
+        authenticateService: BinanceAuthenticateService
+) : AbstractMarginTradingService(staticConfig, dataAdaptor, authenticateService) {
 
     override fun checkResponse(http: HttpResponse<Buffer>): JsonElement {
         val e = JsonParser.parseString(http.bodyAsString())

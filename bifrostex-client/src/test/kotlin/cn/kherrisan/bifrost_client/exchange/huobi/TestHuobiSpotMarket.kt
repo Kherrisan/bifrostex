@@ -3,12 +3,16 @@ package cn.kherrisan.bifrost_client.exchange.huobi
 import cn.kherrisan.bifrost_client.common.GROUP_HUOBI
 import cn.kherrisan.bifrost_client.common.SUIT_SPOT_MARKET_METHOD
 import cn.kherrisan.bifrost_client.common.TestQueryMarketMethod
+import cn.kherrisan.bifrostex_client.SpringStarter
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
+import cn.kherrisan.bifrostex_client.core.common.SpringContainer
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.Symbol
+import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
 import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import kotlinx.coroutines.runBlocking
+import org.springframework.boot.test.context.SpringBootTest
 import org.testng.annotations.Listeners
 import org.testng.annotations.Test
 import java.math.BigDecimal
@@ -80,6 +84,7 @@ class TestHuobiSpotMarket : TestQueryMarketMethod() {
 
     @Test
     fun testGetTickerOfBTCUSDT() = runBlocking {
+        val metaInfo = SpringContainer[HuobiMetaInfo::class.java]
         val ticker = spotMarketService.getTicker(BTC_USDT)
         logger.debug(ticker)
         // 检查最高价是否高于最低价
@@ -92,7 +97,7 @@ class TestHuobiSpotMarket : TestQueryMarketMethod() {
         assert(ticker.vol < ticker.amount * ticker.high)
         assert(ticker.vol > ticker.amount * ticker.low)
         // 检查 high、low、amount、vol 的 scale 是否符合 metaInfo 的要求
-        val meta = service.metaInfo.symbolMetaInfo[BTC_USDT]!!
+        val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         assert(ticker.high.scale() == meta.priceIncrement)
         assert(ticker.low.scale() == meta.priceIncrement)
         assert(ticker.amount.scale() == meta.sizeIncrement)
@@ -102,8 +107,9 @@ class TestHuobiSpotMarket : TestQueryMarketMethod() {
 
     @Test
     fun getDepthForSth() = runBlocking {
+        val metaInfo = SpringContainer[HuobiMetaInfo::class.java]
         val depth = spotMarketService.getDepths(BTC_USDT, 20)
-        val meta = service.metaInfo.symbolMetaInfo[BTC_USDT]!!
+        val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         logger.debug(depth)
         // 检查最低买价是否高于最高卖价
         val minAsk = depth.asks.last()
@@ -155,12 +161,13 @@ class TestHuobiSpotMarket : TestQueryMarketMethod() {
 
     @Test
     fun getKlinesFotSth() = runBlocking {
+        val metaInfo = SpringContainer[HuobiMetaInfo::class.java]
         val startTime = ZonedDateTime.now().minusMonths(1)
         val size = Random.nextInt(5, 20)
         // 测试一个月之前的数据
         val klines = spotMarketService.getKlines(BTC_USDT, KlinePeriodEnum._1DAY, size, Date(startTime.toInstant().toEpochMilli()))
         logger.debug(klines)
-        val meta = service.metaInfo.symbolMetaInfo[BTC_USDT]!!
+        val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         // 检查kline数量
         assert(klines.size == size || klines.size == size + 1)
         // 检查精度

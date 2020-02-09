@@ -5,9 +5,12 @@ import cn.kherrisan.bifrost_client.common.SUIT_MARGIN_TRADING_METHOD
 import cn.kherrisan.bifrost_client.common.TestMarginTradingMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
+import cn.kherrisan.bifrostex_client.core.common.SpringContainer
 import cn.kherrisan.bifrostex_client.entity.BTC
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.USDT
+import cn.kherrisan.bifrostex_client.exchange.binance.BinanceMetaInfo
+import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
 import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import kotlinx.coroutines.runBlocking
 import org.testng.annotations.Listeners
@@ -30,10 +33,11 @@ class TestHuobiMarginTrading : TestMarginTradingMethod() {
 
     @Test
     fun testGetLoanOrder() = runBlocking {
+        val metaInfo = SpringContainer[HuobiMetaInfo::class.java]
         val orders = marginTradingService.getLoanOrders(BTC_USDT)
         orders.forEach {
             logger.info(it)
-            val meta = exchangeService.metaInfo.currencyMetaInfo[it.currency]!!
+            val meta = metaInfo.currencyMetaInfo[it.currency]!!
             assert(it.amount.scale() == meta.sizeIncrement)
             assert(it.interest.scale() == meta.sizeIncrement)
         }
@@ -42,12 +46,13 @@ class TestHuobiMarginTrading : TestMarginTradingMethod() {
 
     @Test
     fun testGetLoanBalance() = runBlocking {
+        val metaInfo = SpringContainer[HuobiMetaInfo::class.java]
         val bal = marginTradingService.getBalance()
         bal.forEach {
             logger.info(it.value)
             val sym = it.key
             val balance = it.value
-            val meta = exchangeService.metaInfo
+            val meta = metaInfo
             assert(balance.flatPrice.scale() == meta.symbolMetaInfo[sym]!!.priceIncrement)
             val base = balance.base
             assert(base.available.scale() == meta.currencyMetaInfo[base.currency]!!.sizeIncrement)
@@ -80,11 +85,5 @@ class TestHuobiMarginTrading : TestMarginTradingMethod() {
         val r = marginTradingService.repay("5952759", USDT, BTC_USDT, 0.000083.toBigDecimal())
         logger.info(r)
         // 超额还款：{"status":"error","err-code":"loan-repay-max-limit","err-msg":"This amount exceeds the Unsettled amount. Please re-enter.","data":null}
-    }
-
-    @Test
-    fun testGetTransactionHistory() = runBlocking {
-        val th = marginTradingService.getTransactionHistory(USDT)
-        th.forEach { logger.info(it) }
     }
 }

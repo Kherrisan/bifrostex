@@ -1,8 +1,6 @@
 package cn.kherrisan.bifrostex_client.exchange.kucoin
 
-import cn.kherrisan.bifrostex_client.core.common.MyDate
-import cn.kherrisan.bifrostex_client.core.common.POST
-import cn.kherrisan.bifrostex_client.core.common.iid
+import cn.kherrisan.bifrostex_client.core.common.*
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
@@ -15,13 +13,35 @@ import com.google.gson.Gson
 import com.google.gson.JsonElement
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
+import javax.annotation.PostConstruct
 
-class KucoinSpotMarketService(service: KucoinService) : AbstractSpotMarketService(service) {
+@Component
+class KucoinSpotMarketService @Autowired constructor(
+        staticConfiguration: KucoinStaticConfiguration,
+        dataAdaptor: KucoinSerivceDataAdaptor
+) : AbstractSpotMarketService(staticConfiguration, dataAdaptor) {
 
-    private val auth = KucoinAuthenticateService(service)
+    @Autowired
+    private lateinit var auth: KucoinAuthenticateService
+
+    @PostConstruct
+    fun initInstanceServer(){
+        runBlocking {
+            val instance = getInstanceServer()
+            staticConfig.spotMarketWsHost = "${instance.url}?token=${instance.token}&connectId=${md5(uuid())}&acceptUserMessage=true"
+            RuntimeConfigContainer[ExchangeName.KUCOIN]!!.pingTimeout = instance.pingTimeout
+            RuntimeConfigContainer[ExchangeName.KUCOIN]!!.pingInterval = instance.pingInterval
+            val privateInstance = getPrivateInstanceServer()
+            staticConfig.spotTradingWsHost = "${privateInstance.url}?token=${privateInstance.token}&connectId=${md5(uuid())}&acceptUserMessage=true"
+        }
+    }
 
     suspend fun signedPost(url: String, params: MutableMap<String, String> = mutableMapOf(), headers: MutableMap<String, String> = mutableMapOf()): HttpResponse<Buffer> {
         auth.signedHttpRequest(POST, url, params as MutableMap<String, Any>, headers)
@@ -167,7 +187,7 @@ class KucoinSpotMarketService(service: KucoinService) : AbstractSpotMarketServic
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend (JsonElement, Subscription<T>) -> Unit): Subscription<T> {
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
         val sub = Subscription<T>(channel, dispatcher, resolver)
         sub.subPacket = {
             val id = iid().toInt()
@@ -198,7 +218,6 @@ class KucoinSpotMarketService(service: KucoinService) : AbstractSpotMarketServic
      * @return Subscription<Depth>
      */
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
-        service.awaitInitialization()
         val ch = "/market/level2:${string(symbol)}"
         val sub = newSubscription<Depth>(ch) { it, sub ->
             val data = it.asJsonObject["data"].asJsonObject
@@ -280,9 +299,7 @@ class KucoinSpotMarketService(service: KucoinService) : AbstractSpotMarketServic
      * @return Subscription<Trade>
      */
     override suspend fun subscribeTrade(symbol: Symbol): Subscription<Trade> {
-        service.awaitInitialization()
-        val dispatcher = KucoinWebsocketDispatcher(service as KucoinService)
-        dispatcher.url = service.authWsHost
+        val dispatcher = KucoinWebsocketDispatcher()
         val ch = "/market/match:${string(symbol)}"
         val sub = newSubscription<Trade>(ch, dispatcher) { it, sub ->
             val data = it.asJsonObject["data"].asJsonObject
@@ -305,7 +322,6 @@ class KucoinSpotMarketService(service: KucoinService) : AbstractSpotMarketServic
      * @return Subscription<Ticker>
      */
     override suspend fun subscribeTicker(symbol: Symbol): Subscription<Ticker> {
-        service.awaitInitialization()
         val tickerChannel = "/market/snapshot:${string(symbol)}"
         val tickerSub = newSubscription<Ticker>(tickerChannel) { it, sub ->
             val data = it.asJsonObject["data"].asJsonObject["data"].asJsonObject

@@ -1,24 +1,22 @@
 package cn.kherrisan.bifrostex_client.exchange.poloniex
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeService
-import cn.kherrisan.bifrostex_client.core.common.ServiceDataAdaptor
-import cn.kherrisan.bifrostex_client.core.service.SpotMarketService
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
-import io.vertx.core.Vertx
+import cn.kherrisan.bifrostex_client.core.common.SpotTradingService
+import cn.kherrisan.bifrostex_client.core.service.MarginTradingService
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Lazy
+import org.springframework.stereotype.Component
 
-class PoloniexService(vertx: Vertx) : ExchangeService(vertx) {
-    override var publicHttpHost: String = "https://poloniex.com/public"
-    override var publicWsHost: String = "wss://api2.poloniex.com"
+@Component
+@Lazy
+class PoloniexService : ExchangeService() {
 
-    override fun buildWebsocketDispatcher(): WebsocketDispatcher {
-        return PoloniexWebsocketDispatcher(this)
-    }
+    @Autowired
+    @Lazy
+    override lateinit var spotMarketService: PoloniexSpotMarketService
 
-    override fun buildSpotMarketService(): SpotMarketService {
-        return PoloniexSpotMarketService(this)
-    }
-
-    override fun buildDataAdaptor(): ServiceDataAdaptor {
-        return PoloniexServiceDataAdaptor(this)
-    }
+    override val spotTradingService: SpotTradingService
+        get() = TODO("Init the spotTradingService")
+    override val marginTradingService: MarginTradingService
+        get() = TODO("Init the marginTradingService")
 }

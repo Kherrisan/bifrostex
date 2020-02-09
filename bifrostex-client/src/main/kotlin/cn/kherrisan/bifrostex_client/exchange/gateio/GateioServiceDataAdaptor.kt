@@ -1,6 +1,7 @@
 package cn.kherrisan.bifrostex_client.exchange.gateio
 
 import cn.kherrisan.bifrostex_client.core.common.AbstractServiceDataAdaptor
+import cn.kherrisan.bifrostex_client.core.common.ExchangeMetaInfo
 import cn.kherrisan.bifrostex_client.core.common.MyDate
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
@@ -11,7 +12,7 @@ import com.google.gson.JsonElement
 import java.math.BigDecimal
 import java.util.*
 
-class GateioServiceDataAdaptor(service: GateioService) : AbstractServiceDataAdaptor(service) {
+class GateioServiceDataAdaptor(metaInfo: ExchangeMetaInfo) : AbstractServiceDataAdaptor(metaInfo) {
 
     override fun string(symbol: Symbol): String {
         return "${symbol.base}_${symbol.quote}".toUpperCase()

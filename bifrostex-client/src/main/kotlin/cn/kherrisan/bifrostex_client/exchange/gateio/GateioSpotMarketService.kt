@@ -11,10 +11,20 @@ import cn.kherrisan.bifrostex_client.entity.Currency
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
+import kotlinx.coroutines.CoroutineScope
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 
-class GateioSpotMarketService(service: GateioService) : AbstractSpotMarketService(service) {
+@Component
+class GateioSpotMarketService @Autowired constructor(
+        staticConfiguration: GateioStaticConfiguration,
+        dataAdaptor: GateioServiceDataAdaptor
+) : AbstractSpotMarketService(staticConfiguration, dataAdaptor) {
+
+    @Autowired
+    override lateinit var dispatcher: GateioWebsocketDispatcher
 
     override suspend fun getSymbols(): List<Symbol> {
         val resp = get(publicUrl("/api2/1/pairs"))
@@ -121,7 +131,7 @@ class GateioSpotMarketService(service: GateioService) : AbstractSpotMarketServic
      * @param resolver Function2<JsonElement, Subscription<T>, T>
      * @return Subscription<T>
      */
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend (JsonElement, Subscription<T>) -> Unit): Subscription<T> {
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
         val comm = channel.indexOf(":")
         // 这里的channel并不是真正的channel
         val method = channel.substring(0, comm)
@@ -162,7 +172,7 @@ class GateioSpotMarketService(service: GateioService) : AbstractSpotMarketServic
      */
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
         val ch = "depth:${Gson().toJson(listOf(string(symbol), 5, "0.01"))}"
-        val dispatcher = GateioSingleChannelDispatcher(service as GateioService, "depth:${string(symbol)}")
+        val dispatcher = GateioSingleChannelDispatcher(staticConfig as GateioStaticConfiguration, "depth:${string(symbol)}")
         return newSubscription<Depth>(ch, dispatcher) { obj, sub ->
             val params = obj.asJsonObject["params"].asJsonArray
             val clean = params[0].asBoolean
@@ -222,7 +232,7 @@ class GateioSpotMarketService(service: GateioService) : AbstractSpotMarketServic
 
     override suspend fun subscribeKline(symbol: Symbol, period: KlinePeriodEnum): Subscription<Kline> {
         val args = "kline:${listOf(string(symbol), string(period).toInt())}"
-        val dispatcher = GateioWebsocketDispatcher(service as GateioService)
+        val dispatcher = GateioWebsocketDispatcher(staticConfig as GateioStaticConfiguration)
         return newSubscription<Kline>(args, dispatcher) { obj, sub ->
             obj.asJsonObject["params"].asJsonArray.map { it.asJsonArray }
                     .map {

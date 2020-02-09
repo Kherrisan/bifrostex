@@ -1,9 +1,10 @@
 package cn.kherrisan.bifrostex_client.core.websocket
 
-import cn.kherrisan.bifrostex_client.core.common.DefaultScope
-import cn.kherrisan.bifrostex_client.core.common.ExchangeService
+import cn.kherrisan.bifrostex_client.core.common.ExchangeName
+import cn.kherrisan.bifrostex_client.core.common.RuntimeConfigContainer
 import cn.kherrisan.bifrostex_client.core.common.objSimpName
 import com.google.gson.JsonElement
+import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpClientOptions
 import io.vertx.core.http.WebSocket
@@ -14,32 +15,42 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import org.springframework.beans.factory.annotation.Autowired
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
 
-abstract class WebsocketDispatcher(val service: ExchangeService) : CoroutineScope by DefaultScope(service.vertx) {
+abstract class WebsocketDispatcher {
+
+    /**
+     * 注入全局的 vertx 单例对象
+     */
+    @Autowired
+    private lateinit var vertx: Vertx
+
+    abstract val host: String
+    abstract val name: ExchangeName
 
     protected val logger: Logger = LogManager.getLogger()
     protected val subMap: MutableMap<String, Subscription<Any>> = ConcurrentHashMap()
     private lateinit var ws: WebSocket
     var state: EndpointStateEnum = EndpointStateEnum.INIT
-    var url: String = service.publicWsHost
-        set(value) {
-            field = value
-        }
-    val vertx
-        get() = service.vertx
     var dispatcherLoop: Job? = null
 
-    fun triggerSubscribed(ch: String) {
+    fun triggerSubscribedEvent(ch: String) {
         logger.debug("Trigger subscribed to $ch")
         subMap[ch]!!.triggerSubscribed()
     }
 
-    suspend fun triggerUnsubscribed(ch: String) {
+    /**
+     * 触发取消订阅事件
+     *
+     * 触发 subscription 的 triggerUnsubscribedEvent，来完成 promise。没有启动子协程，不需要 CoroutineScope
+     * @param ch String
+     */
+    suspend fun triggerUnsubscribedEvent(ch: String) {
         val sub = unregister(ch)
         logger.debug("Trigger unsubscribed to $ch")
-        sub.triggerUnsubscribed()
+        sub.triggerUnsubscribedEvent()
         if (subMap.isEmpty()) {
             close()
         }
@@ -57,7 +68,7 @@ abstract class WebsocketDispatcher(val service: ExchangeService) : CoroutineScop
 
     private fun buildHttpClientOptions(): HttpClientOptions {
         val options = HttpClientOptions()
-        val rt = service.rtConfig
+        val rt = RuntimeConfigContainer[name]!!
         if (rt.proxyHost != null && rt.proxyPort != null) {
             val po = ProxyOptions()
             po.host = rt.proxyHost
@@ -88,9 +99,9 @@ abstract class WebsocketDispatcher(val service: ExchangeService) : CoroutineScop
     }
 
     suspend fun connect() {
-        logger.debug("Start to connect to $url")
+        logger.debug("Start to connect to $host")
         val hco = buildHttpClientOptions()
-        val uri = URI.create(url)
+        val uri = URI.create(host)
         var port = uri.port
         if (uri.scheme == "wss") {
             hco.isSsl = true
@@ -105,20 +116,22 @@ abstract class WebsocketDispatcher(val service: ExchangeService) : CoroutineScop
             "${uri.path}?${uri.query}"
         }
         ws = awaitResult { vertx.createHttpClient(hco).webSocket(port, uri.host, rp, it) }
-        logger.debug("Connected to $url")
+        logger.debug("Connected to $host")
         val channel = Channel<Buffer>(Channel.UNLIMITED)
         ws.handler {
             channel.offer(it)
         }
         state = EndpointStateEnum.CONNECTED
-        launch(vertx.dispatcher()) {
-            while (true) {
-                try {
-                    val buffer = channel.receive()
-                    dispatch(buffer.bytes)
-                } catch (e: CancellationException) {
-                    channel.close()
-                    logger.debug("Websocket channel is closed.")
+        coroutineScope {
+            launch(vertx.dispatcher()) {
+                while (true) {
+                    try {
+                        val buffer = channel.receive()
+                        dispatch(buffer.bytes)
+                    } catch (e: CancellationException) {
+                        channel.close()
+                        logger.debug("Websocket channel is closed.")
+                    }
                 }
             }
         }
@@ -139,7 +152,7 @@ abstract class WebsocketDispatcher(val service: ExchangeService) : CoroutineScop
         subMap.clear()
     }
 
-    abstract suspend fun dispatch(bytes: ByteArray)
+    abstract suspend fun CoroutineScope.dispatch(bytes: ByteArray)
 
     /**
      * 发送 pong 帧
@@ -153,6 +166,12 @@ abstract class WebsocketDispatcher(val service: ExchangeService) : CoroutineScop
         logger.debug("Websocket has sent pong frame: $text")
     }
 
+    /**
+     * 向 websocket 发送消息
+     *
+     * @receiver CoroutineScope
+     * @param text String
+     */
     suspend fun send(text: String) {
         if (state == EndpointStateEnum.INIT || state == EndpointStateEnum.CLOSED) {
             connect()

@@ -8,22 +8,33 @@ import cn.kherrisan.bifrostex_client.core.websocket.Subscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
-
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
+import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
 import io.vertx.kotlin.coroutines.dispatcher
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 import kotlin.collections.HashMap
 
-class HuobiSpotMarketService(service: HuobiService) :
-        AbstractSpotMarketService(service) {
+@Component
+class HuobiSpotMarketService @Autowired constructor(
+        staticConfig: HuobiStaticConfiguration,
+        dataAdaptor: HuobiServiceDataAdaptor
+) : AbstractSpotMarketService(staticConfig, dataAdaptor) {
+
+    @Autowired
+    override lateinit var dispatcher: HuobiWebsocketDispatcher
+
+    @Autowired
+    private lateinit var vertx: Vertx
 
     override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
         val obj = JsonParser.parseString(resp.bodyAsString()).asJsonObject
@@ -164,7 +175,7 @@ class HuobiSpotMarketService(service: HuobiService) :
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend (JsonElement, Subscription<T>) -> Unit): Subscription<T> {
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
         val subscription = Subscription(channel, dispatcher, resolver)
         subscription.requestPacket = { Gson().toJson(mapOf("req" to channel, "id" to iid())) }
         subscription.subPacket = { Gson().toJson(mapOf("sub" to channel, "id" to iid())) }
@@ -216,7 +227,7 @@ class HuobiSpotMarketService(service: HuobiService) :
                                     //再请求一次全量数据，在此之前，把buffer中所有的prev大于base.seq的都删掉
                                     val before = sub.buffer.map { it as SequentialDepth }.filter { it.prev < baseDepth.seq }
                                     sub.buffer.remove(before)
-                                    GlobalScope.launch(service.vertx.dispatcher()) {
+                                    launch(vertx.dispatcher()) {
                                         sub.data = null
                                         hasRequestAgain = true
                                         disorderCounter = 0

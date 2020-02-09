@@ -14,8 +14,7 @@ class TestSubscriptionMemoryLeak {
 
     @Test(enabled = false)
     fun testMemoryLeak() {
-        val vertx = Vertx.vertx()
-        val exchange = ExchangeFactory.build(ExchangeName.GATEIO, vertx)
+        val exchange = ExchangeFactory.build(ExchangeName.GATEIO)
         runBlocking {
             val sub = exchange.spotMarketService.subscribeTrade(Symbol(BTC, USDT))
             while (true) {

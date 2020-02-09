@@ -11,10 +11,17 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 
-class OkexSpotTradingService(service: OkexService) : AbstractSpotTradingService(service) {
+@Component
+class OkexSpotTradingService @Autowired constructor(
+        staticConfiguration: OkexStaticConfiguration,
+        dataAdaptor: OkexServiceDataAdaptor,
+        authenticateService: OkexAuthenticateService
+) : AbstractSpotTradingService(staticConfiguration, dataAdaptor, authenticateService) {
 
     override fun checkResponse(http: HttpResponse<Buffer>): JsonElement {
         val e = JsonParser.parseString(http.bodyAsString())

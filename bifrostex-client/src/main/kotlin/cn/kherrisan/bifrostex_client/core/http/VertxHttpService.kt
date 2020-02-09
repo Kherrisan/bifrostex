@@ -8,8 +8,17 @@ import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
 import io.vertx.ext.web.client.WebClientOptions
 import io.vertx.kotlin.coroutines.awaitResult
+import org.springframework.beans.factory.annotation.Autowired
 
-open class VertxHttpService(var vertx: Vertx)
+/**
+ * Http 操作的 Vertx 实现类
+ *
+ * 不维护状态，是单例的。
+ * @property vertx Vertx
+ * @property client WebClient
+ * @constructor
+ */
+open class VertxHttpService @Autowired constructor(var vertx: Vertx)
     : HttpService {
 
     private var client: WebClient

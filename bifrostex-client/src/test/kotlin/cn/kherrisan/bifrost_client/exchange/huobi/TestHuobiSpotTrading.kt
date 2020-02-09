@@ -5,11 +5,13 @@ import cn.kherrisan.bifrost_client.common.SUIT_SPOT_TRADING_METHOD
 import cn.kherrisan.bifrost_client.common.TestSpotTradingMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
+import cn.kherrisan.bifrostex_client.core.common.SpringContainer
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.entity.BTC
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import cn.kherrisan.bifrostex_client.entity.USDT
+import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
 import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -114,9 +116,10 @@ class TestHuobiSpotTrading : TestSpotTradingMethod() {
 
     @Test
     fun testGetOrder() = runBlocking {
+        val metaInfo = SpringContainer[HuobiMetaInfo::class.java]
         val o = spotTrading.getOrderDetail("66773470708", BTC_USDT)
         logger.info(o)
-        val meta = exchangeService.metaInfo.symbolMetaInfo[BTC_USDT]!!
+        val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         // 检查几个报价精度和数量精度
         assert(o.amount.scale() == meta.sizeIncrement)
         assert(o.filledAmount.scale() == meta.sizeIncrement)
@@ -150,16 +153,5 @@ class TestHuobiSpotTrading : TestSpotTradingMethod() {
     fun testGetBalance() = runBlocking {
         val bal = spotTrading.getBalance()
         bal.entries.forEach { logger.info("${it.key}:${it.value}") }
-    }
-
-    @Test
-    fun testGetTransactionHistory() = runBlocking {
-        val trans = spotTrading.getTransactionHistory(USDT)
-        val meta = exchangeService.metaInfo.currencyMetaInfo[USDT]!!
-        trans.forEach {
-            logger.info(it)
-            assert(it.amount.scale() == meta.sizeIncrement)
-            assert(it.balance.scale() == meta.sizeIncrement)
-        }
     }
 }

@@ -6,12 +6,14 @@ import cn.kherrisan.bifrostex_client.core.common.HttpUtils
 import cn.kherrisan.bifrostex_client.core.common.POST
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 
-open class DefaultSignedHttpService(service: ExchangeService) :
+open class DefaultSignedHttpService(val auth: AuthenticationService) :
         HttpUtils(), SignedHttpService, HttpService {
 
-    private val http = VertxHttpService(service.vertx)
-    val auth by lazy { service.buildAuthenticationService() }
+    @Autowired
+    private lateinit var http: VertxHttpService
 
     override fun auth(): AuthenticationService {
         return auth

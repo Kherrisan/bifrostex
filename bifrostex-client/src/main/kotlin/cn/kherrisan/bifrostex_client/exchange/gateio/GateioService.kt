@@ -2,23 +2,25 @@ package cn.kherrisan.bifrostex_client.exchange.gateio
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeService
 import cn.kherrisan.bifrostex_client.core.common.ServiceDataAdaptor
+import cn.kherrisan.bifrostex_client.core.common.SpotTradingService
+import cn.kherrisan.bifrostex_client.core.service.MarginTradingService
 import cn.kherrisan.bifrostex_client.core.service.SpotMarketService
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import io.vertx.core.Vertx
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Lazy
+import org.springframework.stereotype.Component
 
-class GateioService(vertx: Vertx) : ExchangeService(vertx) {
-    override var publicHttpHost: String = "https://data.gateio.life"
-    override var publicWsHost: String = "wss://ws.gate.io/v3/"
+@Component
+@Lazy
+class GateioService : ExchangeService() {
 
-    override fun buildWebsocketDispatcher(): WebsocketDispatcher {
-        return GateioWebsocketDispatcher(this)
-    }
+    @Autowired
+    @Lazy
+    override lateinit var spotMarketService: GateioSpotMarketService
 
-    override fun buildSpotMarketService(): SpotMarketService {
-        return GateioSpotMarketService(this)
-    }
-
-    override fun buildDataAdaptor(): ServiceDataAdaptor {
-        return GateioServiceDataAdaptor(this)
-    }
+    override val spotTradingService: SpotTradingService
+        get() = TODO("Init the spotTradingService")
+    override val marginTradingService: MarginTradingService
+        get() = TODO("Init the marginTradingService")
 }

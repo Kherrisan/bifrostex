@@ -12,10 +12,17 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 
-class BinanceSpotTradingService(service: BinanceService) : AbstractSpotTradingService(service) {
+@Component
+class BinanceSpotTradingService @Autowired constructor(
+        staticConfiguration: BinanceStaticConfiguration,
+        dataAdaptor: BinanceServiceDataAdaptor,
+        authenticateService: BinanceAuthenticateService
+) : AbstractSpotTradingService(staticConfiguration, dataAdaptor, authenticateService) {
 
     override fun checkResponse(http: HttpResponse<Buffer>): JsonElement {
         val e = JsonParser.parseString(http.bodyAsString())

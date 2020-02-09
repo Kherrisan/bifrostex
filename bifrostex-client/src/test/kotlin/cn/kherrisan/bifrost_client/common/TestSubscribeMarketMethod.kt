@@ -1,9 +1,7 @@
 package cn.kherrisan.bifrost_client.common
 
-import cn.kherrisan.bifrostex_client.core.common.ExchangeFactory
-import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.common.ExchangeService
-import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
+import cn.kherrisan.bifrostex_client.core.common.*
+import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
 import cn.kherrisan.bifrostex_client.core.service.SpotMarketService
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import cn.kherrisan.bifrostex_client.entity.SymbolMetaInfo
@@ -23,8 +21,8 @@ abstract class TestSubscribeMarketMethod {
 
     @BeforeClass
     fun init() {
-        service = ExchangeFactory.build(name, vertx, config)
+        service = ExchangeFactory.build(name, config)
         spotMarketService = service.spotMarketService
-        symbolMetaInfo = service.metaInfo.symbolMetaInfo[symbol]!!
+        symbolMetaInfo = ((spotMarketService as AbstractSpotMarketService).dataAdaptor as AbstractServiceDataAdaptor).metaInfo.symbolMetaInfo[symbol]!!
     }
 }

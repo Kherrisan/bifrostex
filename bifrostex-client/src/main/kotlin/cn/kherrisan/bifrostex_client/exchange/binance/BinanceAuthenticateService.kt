@@ -1,18 +1,22 @@
 package cn.kherrisan.bifrostex_client.exchange.binance
 
+import cn.kherrisan.bifrostex_client.core.common.SpringContainer
 import cn.kherrisan.bifrostex_client.core.common.hmacSHA256Signature
 import cn.kherrisan.bifrostex_client.core.common.urlEncode
 import cn.kherrisan.bifrostex_client.core.http.AuthenticationService
 import org.apache.commons.codec.binary.Hex
 
-class BinanceAuthenticateService(val service: BinanceService) : AuthenticationService {
+class BinanceAuthenticateService : AuthenticationService {
+
+    val apiKey = SpringContainer[BinanceService::class.java].runtimeConfig.apiKey
+    val apiSecret = SpringContainer[BinanceService::class.java].runtimeConfig.secretKey
 
     override fun signedHttpRequest(method: String, path: String, params: MutableMap<String, Any>, headers: MutableMap<String, String>) {
-        headers["X-MBX-APIKEY"] = service.rtConfig.apiKey!!
+        headers["X-MBX-APIKEY"] = apiKey!!
         params["recvWindow"] = "60000"
         params["timestamp"] = System.currentTimeMillis().toString()
         val payload = urlEncode(params)
-        val sigBytes = hmacSHA256Signature(payload, service.rtConfig.secretKey!!)
+        val sigBytes = hmacSHA256Signature(payload, apiSecret!!)
         params["signature"] = Hex.encodeHexString(sigBytes)
     }
 }

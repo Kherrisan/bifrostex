@@ -8,9 +8,12 @@ import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderTypeEnum
 import cn.kherrisan.bifrostex_client.entity.Symbol
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.util.*
 
-class PoloniexServiceDataAdaptor(service: PoloniexService) : AbstractServiceDataAdaptor(service) {
+@Component
+class PoloniexServiceDataAdaptor @Autowired constructor(metaInfo: PoloniexMetaInfo) : AbstractServiceDataAdaptor(metaInfo) {
     override fun string(symbol: Symbol): String {
         return "${symbol.quote}_${symbol.base}".toUpperCase()
     }

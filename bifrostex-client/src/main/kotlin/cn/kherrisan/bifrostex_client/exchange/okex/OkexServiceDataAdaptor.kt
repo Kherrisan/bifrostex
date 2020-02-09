@@ -1,20 +1,21 @@
 package cn.kherrisan.bifrostex_client.exchange.okex
 
-import cn.kherrisan.bifrostex_client.core.common.AbstractServiceDataAdaptor
-import cn.kherrisan.bifrostex_client.core.common.MyDate
-import cn.kherrisan.bifrostex_client.core.common.UNKNOWN_ORDER_STATE
-import cn.kherrisan.bifrostex_client.core.common.UNSUPPORTED_KLINE_PERIOD_ENUM
+import cn.kherrisan.bifrostex_client.core.common.*
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.LoanStatusEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import com.google.gson.JsonElement
 import com.google.gson.internal.bind.util.ISO8601Utils
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.text.ParsePosition
 import java.util.*
 
-class OkexServiceDataAdaptor(service: OkexService) : AbstractServiceDataAdaptor(service) {
+@Component
+class OkexServiceDataAdaptor @Autowired constructor(metaInfo: OkexMetaInfo)
+    : AbstractServiceDataAdaptor(metaInfo) {
 
     override val orderStateMap: Map<String, OrderStateEnum> = mapOf(
             "-2" to OrderStateEnum.FAILED,

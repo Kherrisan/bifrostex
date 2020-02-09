@@ -4,10 +4,17 @@ import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotTradingService
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 
-class KucoinSpotTradingService(service: KucoinService) : AbstractSpotTradingService(service) {
+@Component
+class KucoinSpotTradingService @Autowired constructor(
+        staticConfiguration: KucoinStaticConfiguration,
+        dataAdaptor: KucoinSerivceDataAdaptor,
+        authenticateService: KucoinAuthenticateService
+) : AbstractSpotTradingService(staticConfiguration, dataAdaptor, authenticateService) {
     override suspend fun getBalance(): Map<Currency, SpotBalance> {
         throw NotImplementedError()
     }

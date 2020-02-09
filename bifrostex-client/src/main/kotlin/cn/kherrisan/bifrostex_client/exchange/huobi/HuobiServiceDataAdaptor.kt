@@ -5,9 +5,14 @@ import cn.kherrisan.bifrostex_client.core.common.MyDate
 import cn.kherrisan.bifrostex_client.core.enumeration.*
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import com.google.gson.JsonElement
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.util.*
 
-open class HuobiServiceDataAdaptor(service: HuobiService) : AbstractServiceDataAdaptor(service) {
+@Component
+open class HuobiServiceDataAdaptor @Autowired constructor(metaInfo: HuobiMetaInfo)
+    : AbstractServiceDataAdaptor(metaInfo) {
+
     override val klinePeriodMap: Map<KlinePeriodEnum, String> =
             mapOf(
                     KlinePeriodEnum._1MIN to "1min",
@@ -71,7 +76,7 @@ open class HuobiServiceDataAdaptor(service: HuobiService) : AbstractServiceDataA
      * @return Symbol
      */
     override fun symbol(str: String): Symbol {
-        return Symbol.parse(str, service.metaInfo.currencyList)
+        return Symbol.parse(str, metaInfo.currencyList)
     }
 
     /**
