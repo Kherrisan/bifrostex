@@ -16,6 +16,7 @@ object ExchangeFactory {
      */
     fun build(name: ExchangeName = ExchangeName.HUOBI, config: RuntimeConfiguration = RuntimeConfiguration()): ExchangeService {
         val service = SpringContainer[name.exchangeServiceClass]
+        RuntimeConfigContainer[name] = config
         service.runtimeConfig = config
         service.name = name
         return service

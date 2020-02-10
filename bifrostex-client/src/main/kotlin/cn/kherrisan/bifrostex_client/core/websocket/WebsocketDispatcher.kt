@@ -122,16 +122,14 @@ abstract class WebsocketDispatcher {
             channel.offer(it)
         }
         state = EndpointStateEnum.CONNECTED
-        coroutineScope {
-            launch(vertx.dispatcher()) {
-                while (true) {
-                    try {
-                        val buffer = channel.receive()
-                        dispatch(buffer.bytes)
-                    } catch (e: CancellationException) {
-                        channel.close()
-                        logger.debug("Websocket channel is closed.")
-                    }
+        GlobalScope.launch(vertx.dispatcher()) {
+            while (true) {
+                try {
+                    val buffer = channel.receive()
+                    dispatch(buffer.bytes)
+                } catch (e: CancellationException) {
+                    channel.close()
+                    logger.debug("Websocket channel is closed.")
                 }
             }
         }

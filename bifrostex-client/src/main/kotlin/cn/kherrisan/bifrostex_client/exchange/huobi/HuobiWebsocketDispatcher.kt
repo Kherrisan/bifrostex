@@ -20,6 +20,7 @@ class HuobiWebsocketDispatcher @Autowired constructor(
 
     override suspend fun CoroutineScope.dispatch(bytes: ByteArray) {
         val clear = ungzip(bytes)
+        logger.trace(clear)
         val obj = JsonParser.parseString(clear).asJsonObject
         when {
             obj.has("ping") -> {
