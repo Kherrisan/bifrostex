@@ -62,6 +62,7 @@ class OkexSpotMarketService @Autowired constructor(
     }
 
     suspend fun signedGet(url: String, params: MutableMap<String, String> = mutableMapOf(), headers: MutableMap<String, String> = mutableMapOf()): HttpResponse<Buffer> {
+        @Suppress("UNCHECKED_CAST")
         auth.signedHttpRequest(GET, url, params as MutableMap<String, Any>, headers)
         return get(url, params, headers)
     }
@@ -203,17 +204,14 @@ class OkexSpotMarketService @Autowired constructor(
                 val data = obj["data"].asJsonArray.map { it.asJsonObject }
                         .find { it["instrument_id"].asString == string(symbol) }!!.asJsonObject
                 val inc = depth(symbol, data)
-                val zeros = inc.asks.count { it.amount.compareTo(BigDecimal.ZERO) == 0 }
-//                println("${inc.asks.size}-$zeros")
                 sub.buffer.add(inc)
                 if (sub.data != null) {
                     val baseDepth = sub.data as Depth
                     val oldDepths = sub.buffer.map { it as Depth }.filter { it.time < baseDepth.time }
                     sub.buffer.removeAll(oldDepths)
-                    for (inc in sub.buffer.map { it as Depth }.sortedBy { it.time }) {
-                        baseDepth.merge(inc)
-                        baseDepth.time = inc.time
-//                        println("baseDepth:${baseDepth.asks.size}")
+                    for (increment in sub.buffer.map { it as Depth }.sortedBy { it.time }) {
+                        baseDepth.merge(increment)
+                        baseDepth.time = increment.time
                     }
                     sub.deliver(baseDepth)
                 }

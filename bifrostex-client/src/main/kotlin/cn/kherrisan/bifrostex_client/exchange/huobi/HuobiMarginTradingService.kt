@@ -79,7 +79,7 @@ class HuobiMarginTradingService @Autowired constructor(
         size?.let { params["size"] = it.toString() }
         start?.let { params["start-date"] = D_FORMAT.format(it) }
         end?.let { params["end-date"] = D_FORMAT.format(it) }
-        status?.let { params["states"] = string(it) }
+        status.let { params["states"] = string(it) }
         val obj = jsonObject(signedGet(authUrl("/v1/margin/loan-orders"), params))
         return obj["data"].asJsonArray.map { it.asJsonObject }
                 .map {

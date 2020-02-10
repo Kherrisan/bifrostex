@@ -24,6 +24,7 @@ import java.math.BigDecimal
 import java.util.*
 import kotlin.collections.HashMap
 
+@Suppress("UNCHECKED_CAST")
 @Component
 class HuobiSpotMarketService @Autowired constructor(
         staticConfig: HuobiStaticConfiguration,
@@ -162,7 +163,7 @@ class HuobiSpotMarketService @Autowired constructor(
         val obj = jsonObject(resp)
         return obj["data"].asJsonArray
                 .map { it.asJsonObject }
-                .mapIndexed { i, it ->
+                .mapIndexed { _, it ->
                     Kline(
                             symbol,
                             date((it["id"].asLong * 1000).toString()), // id为新加坡时间的时间戳
@@ -188,17 +189,17 @@ class HuobiSpotMarketService @Autowired constructor(
         var hasRequestAgain = false
         var disorderCounter = 0
         //先订阅增量数据
-        sub.resolver = { it, sub ->
+        sub.resolver = { it, subscription ->
             val obj = it.asJsonObject
             if (obj.has("rep")) {
                 //是针对req的响应报文，处理全量数据
-                sub.triggerRequested()
-                logger.debug("Get response from ${sub.channel}")
+                subscription.triggerRequested()
+                logger.debug("Get response from ${subscription.channel}")
                 var depth = depth(symbol, it.asJsonObject["data"].asJsonObject)
                 depth = SequentialDepth(depth, 0L, 0L)
                 depth.seq = it.asJsonObject["data"].asJsonObject["seqNum"].asLong
                 logger.debug("Base depth: $depth")
-                sub.data = depth
+                subscription.data = depth
             } else {
                 //是订阅报文，处理增量数据
                 var depth = depth(symbol, it.asJsonObject["tick"].asJsonObject)
@@ -206,17 +207,17 @@ class HuobiSpotMarketService @Autowired constructor(
                 depth.seq = it.asJsonObject["tick"].asJsonObject["seqNum"].asLong
                 depth.prev = it.asJsonObject["tick"].asJsonObject["prevSeqNum"].asLong
                 //缓存起来
-                sub.buffer.add(depth)
-                if (sub.data != null) {
+                subscription.buffer.add(depth)
+                if (subscription.data != null) {
                     var updated = false
-                    val baseDepth = sub.data as SequentialDepth
-                    val afterInitDepth = sub.buffer.map { it as SequentialDepth }.filter { it.prev >= baseDepth.seq }.sortedBy { it.seq }
+                    val baseDepth = subscription.data as SequentialDepth
+                    val afterInitDepth = subscription.buffer.map { it as SequentialDepth }.filter { it.prev >= baseDepth.seq }.sortedBy { it.seq }
                     for (inc in afterInitDepth) {
                         if (inc.prev == baseDepth.seq) {
                             baseDepth.merge(inc)
                             baseDepth.seq = inc.seq
                             updated = true
-                            sub.buffer.remove(inc)
+                            subscription.buffer.remove(inc)
                         } else {
                             //增量深度数据出现缺失，但也有可能只是暂时的失序，可以等一段时间
                             //但要记录等待的次数，避免一直处于失序-等待的状态中
@@ -226,16 +227,16 @@ class HuobiSpotMarketService @Autowired constructor(
                                 if (!hasRequestAgain) {
                                     logger.error("Uncontinutial increment data")
                                     //再请求一次全量数据，在此之前，把buffer中所有的prev大于base.seq的都删掉
-                                    val before = sub.buffer.map { it as SequentialDepth }.filter { it.prev < baseDepth.seq }
-                                    sub.buffer.remove(before)
+                                    val before = subscription.buffer.map { it as SequentialDepth }.filter { it.prev < baseDepth.seq }
+                                    subscription.buffer.remove(before)
                                     launch(vertx.dispatcher()) {
-                                        sub.data = null
+                                        subscription.data = null
                                         hasRequestAgain = true
                                         disorderCounter = 0
                                         hasRequestAgain = false
                                         // 随机等待一个时间
                                         randomDelay()
-                                        sub.request()
+                                        subscription.request()
                                     }
                                 }
                             }
@@ -243,7 +244,7 @@ class HuobiSpotMarketService @Autowired constructor(
                         }
                     }
                     if (updated) {
-                        sub.deliver(sub.data as SequentialDepth)
+                        subscription.deliver(subscription.data as SequentialDepth)
                     }
                 }
             }
@@ -276,7 +277,7 @@ class HuobiSpotMarketService @Autowired constructor(
      */
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
         val ch = "market.${string(symbol)}.mbp.150"
-        val sub = newSubscription<Depth>(ch) { it, sub -> }
+        val sub = newSubscription<Depth>(ch) { _, _ -> }
         doSubscribeDepth(sub, symbol)
         return sub
     }

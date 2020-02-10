@@ -43,8 +43,8 @@ class HuobiSpotTradingService @Autowired constructor(
         }
     }
 
-    override fun checkResponse(http: HttpResponse<Buffer>): JsonElement {
-        val obj = JsonParser.parseString(http.bodyAsString()).asJsonObject
+    override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
+        val obj = JsonParser.parseString(resp.bodyAsString()).asJsonObject
         if (obj.has("status") && obj["status"].asString == "error") {
             logger.error(obj)
             error(obj)
@@ -144,7 +144,7 @@ class HuobiSpotTradingService @Autowired constructor(
         val params = mapOf("account-id" to metaInfo.accountIdMap[AccountTypeEnum.SPOT]!!,
                 "symbol" to string(symbol),
                 "size" to "$size")
-        val signedUrl = buildSignedSubpath("/v1/order/openOrders", GET, params as MutableMap<String, Any>)
+        @Suppress("UNCHECKED_CAST") val signedUrl = buildSignedSubpath("/v1/order/openOrders", GET, params as MutableMap<String, Any>)
         val resp = get(authUrl(signedUrl))
         val obj = jsonObject(resp)
         return obj["data"].asJsonArray.map { it.asJsonObject }
@@ -182,7 +182,8 @@ class HuobiSpotTradingService @Autowired constructor(
     }
 
     override suspend fun getFee(symbol: Symbol): SpotTradingFee {
-        val params = mutableMapOf("symbols" to string(symbol))
+        val params = getBody("symbols" to string(symbol))
+        @Suppress("UNCHECKED_CAST")
         val signedSubPath = buildSignedSubpath("/v1/fee/fee-rate/get", GET, params as MutableMap<String, Any>)
         val resp = get(authUrl(signedSubPath))
         val data = jsonObject(resp)["data"].asJsonArray[0].asJsonObject
@@ -221,6 +222,7 @@ class HuobiSpotTradingService @Autowired constructor(
         } else {
             params["states"] = string(state)
         }
+        @Suppress("UNCHECKED_CAST")
         val subPath = buildSignedSubpath("/v1/order/orders", GET, params as MutableMap<String, Any>)
         val resp = get(authUrl(subPath))
         val obj = jsonObject(resp)

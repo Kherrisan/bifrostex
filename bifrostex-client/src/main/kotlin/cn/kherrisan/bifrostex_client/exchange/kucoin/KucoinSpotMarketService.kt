@@ -45,6 +45,7 @@ class KucoinSpotMarketService @Autowired constructor(
     }
 
     suspend fun signedPost(url: String, params: MutableMap<String, String> = mutableMapOf(), headers: MutableMap<String, String> = mutableMapOf()): HttpResponse<Buffer> {
+        @Suppress("UNCHECKED_CAST")
         auth.signedHttpRequest(POST, url, params as MutableMap<String, Any>, headers)
         return post(url, HttpMediaTypeEnum.JSON, params, headers)
     }
@@ -171,8 +172,8 @@ class KucoinSpotMarketService @Autowired constructor(
         val params = mutableMapOf("symbol" to string(symbol),
                 "type" to string(periodEnum))
         if (since != null) {
-            params["startAt"] = (since!!.time / 1000).toString()
-            params["endAt"] = (periodEnum.toSeconds() * size + since!!.time / 1000).toString()
+            params["startAt"] = (since.time / 1000).toString()
+            params["endAt"] = (periodEnum.toSeconds() * size + since.time / 1000).toString()
         }
         val resp = get(publicUrl("/api/v1/market/candles"), params)
         return jsonObject(resp)["data"].asJsonArray.map { it.asJsonArray }
@@ -349,6 +350,7 @@ class KucoinSpotMarketService @Autowired constructor(
             sub.buffer.add(ab)
             logger.debug(ab)
         }
+        @Suppress("UNCHECKED_CAST")
         tickerSub.attach(bboSub as Subscription<Any>)
         return tickerSub.subscribe()
     }
