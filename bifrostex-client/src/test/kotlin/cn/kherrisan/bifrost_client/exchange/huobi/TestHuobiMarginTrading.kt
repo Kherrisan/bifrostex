@@ -11,13 +11,10 @@ import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.USDT
 import cn.kherrisan.bifrostex_client.exchange.binance.BinanceMetaInfo
 import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
-import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import kotlinx.coroutines.runBlocking
-import org.testng.annotations.Listeners
-import org.testng.annotations.Test
+import org.junit.Test
+import org.junit.jupiter.api.Disabled
 
-@Test(groups = [GROUP_HUOBI, SUIT_MARGIN_TRADING_METHOD])
-@Listeners(ExtentIReporterSuiteClassListenerAdapter::class)
 class TestHuobiMarginTrading : TestMarginTradingMethod() {
 
     override val exchangeName: ExchangeName = ExchangeName.HUOBI
@@ -25,7 +22,8 @@ class TestHuobiMarginTrading : TestMarginTradingMethod() {
             apiKey = "zrfc4v5b6n-f2c7f45f-b338b7f4-8412c",
             secretKey = "f421cfcf-b422e894-3a57aedd-7bb0f")
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testTransfetToSpot() = runBlocking {
         logger.info(marginTradingService.transferToSpot(BTC, 0.01f.toBigDecimal(), BTC_USDT))
         //{"status":"error","err-code":"dw-insufficient-balance","err-msg":"Insufficient balance. You can only transfer `0.01` at most.","data":null}
@@ -70,7 +68,8 @@ class TestHuobiMarginTrading : TestMarginTradingMethod() {
         }
     }
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testLoanBTC() = runBlocking {
         val mi = marginTradingService.getMarginInfo()[BTC_USDT]!!
         val min = mi.quote.minLoanableAmount
@@ -80,7 +79,8 @@ class TestHuobiMarginTrading : TestMarginTradingMethod() {
         logger.info(r)
     }
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testRepayLoanedBTC() = runBlocking {
         val r = marginTradingService.repay("5952759", USDT, BTC_USDT, 0.000083.toBigDecimal())
         logger.info(r)

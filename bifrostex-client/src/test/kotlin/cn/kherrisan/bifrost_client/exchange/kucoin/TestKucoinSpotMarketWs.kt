@@ -3,9 +3,9 @@ package cn.kherrisan.bifrost_client.exchange.kucoin
 import cn.kherrisan.bifrost_client.common.TestSubscribeMarketMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
-import org.testng.annotations.Test
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
-@Test(enabled = false)
 class TestKucoinSpotMarketWs : TestSubscribeMarketMethod() {
     override val name: ExchangeName = ExchangeName.KUCOIN
     override val config: RuntimeConfiguration = RuntimeConfiguration(

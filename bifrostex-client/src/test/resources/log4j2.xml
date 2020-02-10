@@ -15,5 +15,6 @@
             <AppenderRef ref="Console"/>
         </Root>
         <Logger name="io.netty" level="error"/>
+        <Logger name="org.springframework" level="error"/>
     </Loggers>
 </Configuration>

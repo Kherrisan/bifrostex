@@ -9,16 +9,13 @@ import cn.kherrisan.bifrostex_client.core.enumeration.LoanStatusEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.USDT
-import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.testng.annotations.Listeners
-import org.testng.annotations.Test
+import org.junit.Test
+import org.junit.jupiter.api.Disabled
 import java.time.ZonedDateTime
 import java.util.*
 
-@Test(groups = [GROUP_OKEX, SUIT_MARGIN_TRADING_METHOD])
-@Listeners(ExtentIReporterSuiteClassListenerAdapter::class)
 class TestOkexMarginTrading : TestMarginTradingMethod() {
     override val exchangeName: ExchangeName = ExchangeName.OKEX
     override val rtConfig: RuntimeConfiguration = RuntimeConfiguration(
@@ -26,7 +23,8 @@ class TestOkexMarginTrading : TestMarginTradingMethod() {
             secretKey = "8AFAEB40EB6F7D89363741BAD64476A3",
             password = "Q4y4VghDdsCqR3ZR")
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testTransfetToSpot() = runBlocking {
         logger.info(marginTradingService.transferToSpot(USDT, 88f.toBigDecimal(), BTC_USDT))
         //{"status":"error","err-code":"dw-insufficient-balance","err-msg":"Insufficient balance. You can only transfer `0` at most.","data":null}
@@ -70,7 +68,8 @@ class TestOkexMarginTrading : TestMarginTradingMethod() {
         logger.info(mi[BTC_USDT]!!.quote)
     }
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testLoanBTC() = runBlocking {
         val mi = marginTradingService.getMarginInfo()[BTC_USDT]!!
         val min = mi.quote.minLoanableAmount
@@ -81,7 +80,8 @@ class TestOkexMarginTrading : TestMarginTradingMethod() {
         //{"code":33004,"message":"The number of borrowed coins cannot be less than the minimum number of borrowed coins"}
     }
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testRepayLoanedBTC() = runBlocking {
         val r = marginTradingService.repay("5952759", USDT, BTC_USDT, 0.000083.toBigDecimal())
         logger.info(r)
@@ -97,13 +97,15 @@ class TestOkexMarginTrading : TestMarginTradingMethod() {
 
     }
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testMarketBuySpot() = runBlocking {
         logger.info(marginTradingService.marketBuy(BTC_USDT, volume = 66.toBigDecimal()))
         //{"client_oid":"","error_code":"33017","error_message":"Greater than the maximum available balance","order_id":"-1","result":false}
     }
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testMarketSellSpot() = runBlocking {
         logger.info(marginTradingService.marketSell(BTC_USDT, 0.007.toBigDecimal()))
     }
@@ -127,7 +129,8 @@ class TestOkexMarginTrading : TestMarginTradingMethod() {
      *
      * 先下一个超高价的限价卖单，然后取消他
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testCancelOrder() {
         runBlocking {
             val order = marginTradingService.limitBuy(BTC_USDT, 2000.toBigDecimal(), 0.01.toBigDecimal())
@@ -142,7 +145,8 @@ class TestOkexMarginTrading : TestMarginTradingMethod() {
      *
      * 先下一个超高价限价卖单，然后查询
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testGetOpenOrders() {
         runBlocking {
             val order = marginTradingService.limitBuy(BTC_USDT, 2000.toBigDecimal(), 0.02.toBigDecimal())
@@ -152,7 +156,8 @@ class TestOkexMarginTrading : TestMarginTradingMethod() {
         }
     }
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testGetSpecifiedOrder() = runBlocking {
         logger.info(marginTradingService.getOrderDetail("4308536683926528", BTC_USDT))
     }

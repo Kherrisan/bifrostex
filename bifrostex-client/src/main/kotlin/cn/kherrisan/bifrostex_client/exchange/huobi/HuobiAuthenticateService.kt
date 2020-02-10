@@ -5,6 +5,7 @@ import cn.kherrisan.bifrostex_client.core.common.gmt
 import cn.kherrisan.bifrostex_client.core.common.hmacSHA256Signature
 import cn.kherrisan.bifrostex_client.core.common.sortedUrlEncode
 import cn.kherrisan.bifrostex_client.core.http.AuthenticationService
+import org.springframework.context.annotation.DependsOn
 import java.util.*
 
 class HuobiAuthenticateService(val host: String) : AuthenticationService {

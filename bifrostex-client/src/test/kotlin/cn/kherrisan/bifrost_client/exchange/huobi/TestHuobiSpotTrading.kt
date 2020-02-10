@@ -12,16 +12,13 @@ import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import cn.kherrisan.bifrostex_client.entity.USDT
 import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
-import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.testng.annotations.Listeners
-import org.testng.annotations.Test
+import org.junit.Test
+import org.junit.jupiter.api.Disabled
 import java.time.ZonedDateTime
 import java.util.*
 
-@Test(groups = [GROUP_HUOBI, SUIT_SPOT_TRADING_METHOD])
-@Listeners(ExtentIReporterSuiteClassListenerAdapter::class)
 class TestHuobiSpotTrading : TestSpotTradingMethod() {
     override val exchangeName: ExchangeName = ExchangeName.HUOBI
     override val rtConfig = RuntimeConfiguration(
@@ -33,7 +30,8 @@ class TestHuobiSpotTrading : TestSpotTradingMethod() {
      *
      * 下一个超低价的买单
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testLimitBuy() {
         runBlocking {
             logger.debug(spotTrading.limitBuy(BTC_USDT, 2000.toBigDecimal(), 0.02.toBigDecimal()))
@@ -45,7 +43,8 @@ class TestHuobiSpotTrading : TestSpotTradingMethod() {
      *
      * 下一个超高价的卖单
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testLimitSell() {
         runBlocking {
             logger.debug(spotTrading.limitSell(BTC_USDT, 12000.toBigDecimal(), 0.004.toBigDecimal()))
@@ -55,7 +54,8 @@ class TestHuobiSpotTrading : TestSpotTradingMethod() {
     /**
      * 测试市价买
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testMarketBuy() {
         runBlocking {
             logger.info(spotTrading.marketBuy(BTC_USDT, volume = 18f.toBigDecimal()))
@@ -66,7 +66,8 @@ class TestHuobiSpotTrading : TestSpotTradingMethod() {
     /**
      * 测试市价卖
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testMarketSell() {
         runBlocking {
             logger.info(spotTrading.marketSell(BTC_USDT, 0.002.toBigDecimal()))
@@ -79,7 +80,8 @@ class TestHuobiSpotTrading : TestSpotTradingMethod() {
      *
      * 先下一个超高价的限价卖单，然后取消他
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testCancelOrder() {
         runBlocking {
             val order = spotTrading.limitBuy(BTC_USDT, 2000.toBigDecimal(), 0.02.toBigDecimal())
@@ -94,7 +96,8 @@ class TestHuobiSpotTrading : TestSpotTradingMethod() {
      *
      * 先下一个超高价限价卖单，然后查询
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testGetOpenOrders() {
         runBlocking {
             val order = spotTrading.limitBuy(BTC_USDT, 2000.toBigDecimal(), 0.02.toBigDecimal())
@@ -143,7 +146,8 @@ class TestHuobiSpotTrading : TestSpotTradingMethod() {
     /**
      * 测试转账到逐仓杠杆账户
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testTransferToMargin() = runBlocking {
         logger.info(spotTrading.transferToMargin(USDT, 0.6.toBigDecimal(), BTC_USDT))
         // {"status":"error","err-code":"dw-insufficient-balance","err-msg":"Insufficient balance. You can only transfer `0.00486024` at most.","data":null}

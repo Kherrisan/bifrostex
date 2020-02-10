@@ -7,12 +7,14 @@ import cn.kherrisan.bifrostex_client.entity.Symbol
 import cn.kherrisan.bifrostex_client.entity.USDT
 import io.vertx.core.Vertx
 import kotlinx.coroutines.runBlocking
-import org.testng.annotations.Test
+import org.junit.Test
+import org.junit.jupiter.api.Disabled
 
 //@Test
 class TestSubscriptionMemoryLeak {
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testMemoryLeak() {
         val exchange = ExchangeFactory.build(ExchangeName.GATEIO)
         runBlocking {

@@ -8,16 +8,13 @@ import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.USDT
-import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.testng.annotations.Listeners
-import org.testng.annotations.Test
+import org.junit.Test
+import org.junit.jupiter.api.Disabled
 import java.time.ZonedDateTime
 import java.util.*
 
-@Test(groups = [GROUP_OKEX, SUIT_SPOT_TRADING_METHOD])
-@Listeners(ExtentIReporterSuiteClassListenerAdapter::class)
 class TestOkexSpotTrading : TestSpotTradingMethod() {
     override val exchangeName: ExchangeName
         get() = ExchangeName.OKEX
@@ -31,7 +28,8 @@ class TestOkexSpotTrading : TestSpotTradingMethod() {
      *
      * 下一个超低价的买单
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testLimitBuy() {
         runBlocking {
             //oid:4250082321523712
@@ -44,7 +42,8 @@ class TestOkexSpotTrading : TestSpotTradingMethod() {
      *
      * 下一个超高价的卖单
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testLimitSell() {
         runBlocking {
             //oid:4250089668481025
@@ -55,7 +54,8 @@ class TestOkexSpotTrading : TestSpotTradingMethod() {
     /**
      * 测试市价买
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testMarketBuy() {
         runBlocking {
             //oid:4250095537891328
@@ -66,7 +66,8 @@ class TestOkexSpotTrading : TestSpotTradingMethod() {
     /**
      * 测试市价卖
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testMarketSell() {
         runBlocking {
             //oid:4250102127403008
@@ -79,7 +80,8 @@ class TestOkexSpotTrading : TestSpotTradingMethod() {
      *
      * 先下一个超高价的限价卖单，然后取消他
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testCancelOrder() {
         runBlocking {
             val order = spotTrading.limitBuy(BTC_USDT, 2000.toBigDecimal(), 0.005.toBigDecimal())
@@ -94,7 +96,8 @@ class TestOkexSpotTrading : TestSpotTradingMethod() {
      *
      * 先下一个超高价限价卖单，然后查询
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testGetOpenOrders() {
         runBlocking {
             val order = spotTrading.limitBuy(BTC_USDT, 2000.toBigDecimal(), 0.005.toBigDecimal())
@@ -128,7 +131,8 @@ class TestOkexSpotTrading : TestSpotTradingMethod() {
         }
     }
 
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testTransferToMarginAccount() = runBlocking {
         logger.info(spotTrading.transferToMargin(USDT, 68.toBigDecimal(), BTC_USDT))
         //超额划转：{"code":34008,"message":"Insufficient funds"}

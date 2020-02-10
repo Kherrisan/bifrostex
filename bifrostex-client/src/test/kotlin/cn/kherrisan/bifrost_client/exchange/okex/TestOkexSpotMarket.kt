@@ -12,18 +12,14 @@ import cn.kherrisan.bifrostex_client.entity.Symbol
 import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
 import cn.kherrisan.bifrostex_client.exchange.okex.OkexMetaInfo
 import cn.kherrisan.bifrostex_client.exchange.okex.OkexService
-import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import kotlinx.coroutines.runBlocking
-import org.testng.annotations.Listeners
-import org.testng.annotations.Test
+import org.junit.Test
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.*
 import kotlin.random.Random
 
-@Test(groups = [GROUP_OKEX, SUIT_SPOT_MARKET_METHOD])
-@Listeners(ExtentIReporterSuiteClassListenerAdapter::class)
 class TestOkexSpotMarket : TestQueryMarketMethod() {
     override val name: ExchangeName = ExchangeName.OKEX
     override val rtConfig: RuntimeConfiguration = RuntimeConfiguration(

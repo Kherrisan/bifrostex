@@ -6,11 +6,11 @@ import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.testng.annotations.Test
+import org.junit.Test
+import org.junit.jupiter.api.Disabled
 import java.time.ZonedDateTime
 import java.util.*
 
-@Test
 class TestBinanceSpotTrading : TestSpotTradingMethod() {
     override val exchangeName: ExchangeName
         get() = ExchangeName.BINANCE
@@ -31,7 +31,8 @@ class TestBinanceSpotTrading : TestSpotTradingMethod() {
      *
      * 下一个超低价的买单
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testLimitBuy() {
         runBlocking {
             //{"code":-2010,"msg":"Account has insufficient balance for requested action."}
@@ -44,7 +45,8 @@ class TestBinanceSpotTrading : TestSpotTradingMethod() {
      *
      * 下一个超高价的卖单
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testLimitSell() {
         runBlocking {
             logger.info(spotTrading.limitSell(BTC_USDT, 12000.toBigDecimal(), 0.001.toBigDecimal()))
@@ -54,7 +56,8 @@ class TestBinanceSpotTrading : TestSpotTradingMethod() {
     /**
      * 测试市价买
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testMarketBuy() {
         runBlocking {
             logger.info(spotTrading.marketBuy(BTC_USDT, 0.0015.toBigDecimal()))
@@ -64,7 +67,8 @@ class TestBinanceSpotTrading : TestSpotTradingMethod() {
     /**
      * 测试市价卖
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testMarketSell() {
         runBlocking {
             logger.info(spotTrading.marketSell(BTC_USDT, 0.0014.toBigDecimal()))
@@ -76,7 +80,8 @@ class TestBinanceSpotTrading : TestSpotTradingMethod() {
      *
      * 先下一个超高价的限价卖单，然后取消他
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testCancelOrder() {
         runBlocking {
             val order = spotTrading.limitBuy(BTC_USDT, 2000.toBigDecimal(), 0.01.toBigDecimal())
@@ -91,7 +96,8 @@ class TestBinanceSpotTrading : TestSpotTradingMethod() {
      *
      * 先下一个超高价限价卖单，然后查询
      */
-    @Test(enabled = false)
+    @Test
+    @Disabled
     fun testGetOpenOrders() {
         runBlocking {
             val order = spotTrading.limitBuy(BTC_USDT, 2000.toBigDecimal(), 0.01.toBigDecimal())

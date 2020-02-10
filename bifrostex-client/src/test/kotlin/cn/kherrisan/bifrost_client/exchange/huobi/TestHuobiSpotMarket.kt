@@ -1,30 +1,27 @@
 package cn.kherrisan.bifrost_client.exchange.huobi
 
-import cn.kherrisan.bifrost_client.common.GROUP_HUOBI
-import cn.kherrisan.bifrost_client.common.SUIT_SPOT_MARKET_METHOD
 import cn.kherrisan.bifrost_client.common.TestQueryMarketMethod
-import cn.kherrisan.bifrostex_client.SpringStarter
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.SpringContainer
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.Symbol
+import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiConfig
 import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
-import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import kotlinx.coroutines.runBlocking
-import org.springframework.boot.test.context.SpringBootTest
-import org.testng.annotations.Listeners
-import org.testng.annotations.Test
+import org.junit.Test
+import org.springframework.beans.factory.annotation.Autowired
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.*
 import kotlin.random.Random
 
-@Test(groups = [GROUP_HUOBI, SUIT_SPOT_MARKET_METHOD])
-@Listeners(ExtentIReporterSuiteClassListenerAdapter::class)
+
 class TestHuobiSpotMarket : TestQueryMarketMethod() {
 
+    @Autowired
+    override lateinit var rtConfig: HuobiConfig
     override val name: ExchangeName = ExchangeName.HUOBI
 
     @Test
@@ -157,7 +154,6 @@ class TestHuobiSpotMarket : TestQueryMarketMethod() {
             last = t.time
         }
     }
-
 
     @Test
     fun getKlinesFotSth() = runBlocking {

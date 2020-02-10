@@ -9,18 +9,15 @@ import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import cn.kherrisan.bifrostex_client.exchange.binance.BinanceMetaInfo
-import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import kotlinx.coroutines.runBlocking
-import org.testng.annotations.Listeners
-import org.testng.annotations.Test
+import org.junit.Test
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.*
 import kotlin.random.Random
 
-@Test(groups = [GROUP_BINANCE, SUIT_SPOT_MARKET_METHOD])
-@Listeners(ExtentIReporterSuiteClassListenerAdapter::class)
+
 class TestBinanceSpotMarket : TestQueryMarketMethod() {
     override val name: ExchangeName = ExchangeName.BINANCE
 

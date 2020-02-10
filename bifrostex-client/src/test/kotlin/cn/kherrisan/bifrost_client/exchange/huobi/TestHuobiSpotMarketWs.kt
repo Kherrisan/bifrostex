@@ -8,16 +8,12 @@ import cn.kherrisan.bifrostex_client.entity.Depth
 import cn.kherrisan.bifrostex_client.entity.Kline
 import cn.kherrisan.bifrostex_client.entity.Ticker
 import cn.kherrisan.bifrostex_client.entity.Trade
-import com.aventstack.extentreports.testng.listener.ExtentIReporterSuiteClassListenerAdapter
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.testng.annotations.Listeners
-import org.testng.annotations.Test
+import org.junit.Test
 
-@Test(groups = [GROUP_HUOBI, SUIT_SPOT_MARKET_WS_METHOD])
-@Listeners(ExtentIReporterSuiteClassListenerAdapter::class)
 class TestHuobiSpotMarketWs : TestSubscribeMarketMethod() {
 
     override val name: ExchangeName = ExchangeName.HUOBI

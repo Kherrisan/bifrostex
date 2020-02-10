@@ -6,7 +6,8 @@ import cn.kherrisan.bifrostex_client.core.service.SpotMarketService
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import cn.kherrisan.bifrostex_client.entity.SymbolMetaInfo
 import org.apache.logging.log4j.LogManager
-import org.testng.annotations.BeforeClass
+import org.junit.BeforeClass
+
 
 abstract class TestSubscribeMarketMethod {
 
