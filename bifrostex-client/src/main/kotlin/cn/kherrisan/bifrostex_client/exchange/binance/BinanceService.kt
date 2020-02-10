@@ -14,18 +14,18 @@ import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 
 @Component
-@Lazy
+
 class BinanceService : ExchangeService() {
 
     @Autowired
-    @Lazy
+
     override lateinit var spotMarketService: BinanceSpotMarketService
 
     @Autowired
-    @Lazy
+
     override lateinit var spotTradingService: BinanceSpotTradingService
 
     @Autowired
-    @Lazy
+
     override lateinit var marginTradingService: BinanceMarginTradingService
 }

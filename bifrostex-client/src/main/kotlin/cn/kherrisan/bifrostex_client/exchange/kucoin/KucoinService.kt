@@ -10,17 +10,16 @@ import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 
 @Component
-@Lazy
+
 class KucoinService : ExchangeService() {
 
     @Autowired
-    @Lazy
+
     override lateinit var spotMarketService: KucoinSpotMarketService
 
     @Autowired
-    @Lazy
+
     override lateinit var  spotTradingService: KucoinSpotTradingService
 
-    override val marginTradingService: MarginTradingService
-        get() = TODO("Init the marginTradingService")
+    override lateinit var marginTradingService: MarginTradingService
 }

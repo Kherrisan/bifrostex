@@ -12,15 +12,14 @@ import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 
 @Component
-@Lazy
+
 class GateioService : ExchangeService() {
 
     @Autowired
-    @Lazy
+
     override lateinit var spotMarketService: GateioSpotMarketService
 
-    override val spotTradingService: SpotTradingService
-        get() = TODO("Init the spotTradingService")
-    override val marginTradingService: MarginTradingService
-        get() = TODO("Init the marginTradingService")
+    override lateinit var spotTradingService: SpotTradingService
+
+    override lateinit var marginTradingService: MarginTradingService
 }

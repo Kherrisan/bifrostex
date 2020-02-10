@@ -31,24 +31,24 @@ open class ExchangeMetaInfo() {
     }
 
     suspend fun CoroutineScope.initMarginMetaInfo(): Job = launch(vertx.dispatcher()) {
-//        marginMetaInfo = service.marginTradingService.getMarginInfo().toMutableMap()
+        marginMetaInfo = service.marginTradingService.getMarginInfo().toMutableMap()
     }
 
     suspend fun CoroutineScope.initCurrencyList(): Job = launch(vertx.dispatcher()) {
-//        currencyList = service.spotMarketService.getCurrencies()
+        currencyList = service.spotMarketService.getCurrencies()
     }
 
     suspend fun CoroutineScope.initSymbolMetaInfo(): Job = launch(vertx.dispatcher()) {
-//        service.spotMarketService.getSymbolMetaInfo().forEach {
-//            symbolMetaInfo[it.symbol] = it
-//            if (!currencyMetaInfo.containsKey(it.symbol.base)) {
-//                currencyMetaInfo[it.symbol.base] = CurrencyMetaInfo(it.symbol.base, 0)
-//            }
-//            currencyMetaInfo[it.symbol.base]!!.smallerSizeIncrement(it.sizeIncrement)
-//            if (!currencyMetaInfo.containsKey(it.symbol.quote)) {
-//                currencyMetaInfo[it.symbol.quote] = CurrencyMetaInfo(it.symbol.quote, 0)
-//            }
-//            currencyMetaInfo[it.symbol.quote]!!.smallerSizeIncrement(it.volumeIncrement)
-//        }
+        service.spotMarketService.getSymbolMetaInfo().forEach {
+            symbolMetaInfo[it.symbol] = it
+            if (!currencyMetaInfo.containsKey(it.symbol.base)) {
+                currencyMetaInfo[it.symbol.base] = CurrencyMetaInfo(it.symbol.base, 0)
+            }
+            currencyMetaInfo[it.symbol.base]!!.smallerSizeIncrement(it.sizeIncrement)
+            if (!currencyMetaInfo.containsKey(it.symbol.quote)) {
+                currencyMetaInfo[it.symbol.quote] = CurrencyMetaInfo(it.symbol.quote, 0)
+            }
+            currencyMetaInfo[it.symbol.quote]!!.smallerSizeIncrement(it.volumeIncrement)
+        }
     }
 }

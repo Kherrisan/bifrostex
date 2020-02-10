@@ -24,7 +24,7 @@ import java.util.*
  * @constructor
  */
 @Component
-@Lazy
+
 class BinanceMarginTradingService @Autowired constructor(
         staticConfig: BinanceStaticConfiguration,
         dataAdaptor: BinanceServiceDataAdaptor,

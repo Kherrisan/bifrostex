@@ -1,25 +1,27 @@
 package cn.kherrisan.bifrostex_client.core.common
 
 import org.springframework.context.ApplicationContext
-import org.springframework.context.ApplicationListener
+import org.springframework.context.ApplicationContextAware
 import org.springframework.context.annotation.Bean
-import org.springframework.context.event.ContextRefreshedEvent
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 
-object SpringContainer : ApplicationListener<ContextRefreshedEvent> {
+object SpringContainer : ApplicationContextAware {
+
+    override fun setApplicationContext(applicationContext: ApplicationContext) {
+        context = applicationContext
+    }
 
     private lateinit var context: ApplicationContext
-
-    override fun onApplicationEvent(event: ContextRefreshedEvent) {
-        context = event.applicationContext
-    }
 
     operator fun <T> get(cls: Class<T>): T = context.getBean(cls)
 }
 
 @Component
+@Lazy(false)
 class SpringContainerFactory {
 
     @Bean
+    @Lazy(false)
     fun springContainer(): SpringContainer = SpringContainer
 }

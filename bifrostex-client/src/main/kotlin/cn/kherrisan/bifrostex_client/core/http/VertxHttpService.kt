@@ -9,6 +9,7 @@ import io.vertx.ext.web.client.WebClient
 import io.vertx.ext.web.client.WebClientOptions
 import io.vertx.kotlin.coroutines.awaitResult
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 
 /**
  * Http 操作的 Vertx 实现类
@@ -18,10 +19,11 @@ import org.springframework.beans.factory.annotation.Autowired
  * @property client WebClient
  * @constructor
  */
+@Component
 open class VertxHttpService @Autowired constructor(var vertx: Vertx)
     : HttpService {
 
-    private var client: WebClient
+    private val client: WebClient
 
     init {
         val clientOptions = WebClientOptions().setTrustAll(true)

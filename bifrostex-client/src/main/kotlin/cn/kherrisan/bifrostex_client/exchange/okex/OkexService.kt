@@ -13,18 +13,18 @@ import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 
 @Component
-@Lazy
+
 class OkexService : ExchangeService() {
 
     @Autowired
-    @Lazy
+
     override lateinit var spotMarketService: OkexSpotMarketService
 
     @Autowired
-    @Lazy
+
     override lateinit var  spotTradingService: OkexSpotTradingService
 
     @Autowired
-    @Lazy
+
     override lateinit var  marginTradingService: OkexMarginTradingService
 }

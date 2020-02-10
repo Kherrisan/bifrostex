@@ -21,11 +21,10 @@ import java.math.RoundingMode
 import java.util.*
 
 @Component
-class HuobiMarginTradingService(
+class HuobiMarginTradingService @Autowired constructor(
         staticConfig: HuobiStaticConfiguration,
-        dataAdaptor: HuobiServiceDataAdaptor,
-        authenticateService: HuobiAuthenticateService
-) : AbstractMarginTradingService(staticConfig, dataAdaptor, authenticateService) {
+        dataAdaptor: HuobiServiceDataAdaptor
+) : AbstractMarginTradingService(staticConfig, dataAdaptor, HuobiAuthenticateService(staticConfig.marginTradingHttpHost)) {
 
     @Autowired
     private lateinit var spot: HuobiSpotTradingService

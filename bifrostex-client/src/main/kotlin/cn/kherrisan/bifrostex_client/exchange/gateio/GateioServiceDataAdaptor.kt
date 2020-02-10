@@ -1,6 +1,7 @@
 package cn.kherrisan.bifrostex_client.exchange.gateio
 
 import cn.kherrisan.bifrostex_client.core.common.AbstractServiceDataAdaptor
+import cn.kherrisan.bifrostex_client.core.common.Compound
 import cn.kherrisan.bifrostex_client.core.common.ExchangeMetaInfo
 import cn.kherrisan.bifrostex_client.core.common.MyDate
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
@@ -9,10 +10,13 @@ import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderTypeEnum
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import com.google.gson.JsonElement
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 
-class GateioServiceDataAdaptor(metaInfo: ExchangeMetaInfo) : AbstractServiceDataAdaptor(metaInfo) {
+@Component
+class GateioServiceDataAdaptor @Autowired constructor(metaInfo: GateioMetaInfo) : AbstractServiceDataAdaptor(metaInfo) {
 
     override fun string(symbol: Symbol): String {
         return "${symbol.base}_${symbol.quote}".toUpperCase()

@@ -15,20 +15,17 @@ import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 
 @Component
-@Lazy
+
 class HuobiService : ExchangeService() {
 
     lateinit var accountIdMap: Map<AccountTypeEnum, String>
 
     @Autowired
-    @Lazy
     override lateinit var spotMarketService: HuobiSpotMarketService
 
     @Autowired
-    @Lazy
     override lateinit var spotTradingService: HuobiSpotTradingService
 
     @Autowired
-    @Lazy
     override lateinit var marginTradingService: HuobiMarginTradingService
 }

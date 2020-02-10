@@ -1,5 +1,6 @@
 package cn.kherrisan.bifrostex_client.core.service
 
+import cn.kherrisan.bifrostex_client.core.DefaultWebsocketDispatcher
 import cn.kherrisan.bifrostex_client.core.common.ExchangeStaticConfiguration
 import cn.kherrisan.bifrostex_client.core.common.HttpUtils
 import cn.kherrisan.bifrostex_client.core.common.IHttpUtils
@@ -31,10 +32,10 @@ abstract class AbstractSpotMarketService(val staticConfig: ExchangeStaticConfigu
     /**
      * Websocket 消息发送和分发器，子类覆盖时必须 Autowired
      */
-    open val dispatcher: WebsocketDispatcher = throw NotImplementedError()
+    open val dispatcher: WebsocketDispatcher = DefaultWebsocketDispatcher()
 
     @Autowired
-    val http: VertxHttpService
+    lateinit var http: VertxHttpService
 
     val logger = LogManager.getLogger()
 

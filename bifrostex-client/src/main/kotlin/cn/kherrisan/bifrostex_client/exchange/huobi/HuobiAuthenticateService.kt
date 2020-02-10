@@ -9,10 +9,9 @@ import java.util.*
 
 class HuobiAuthenticateService(val host: String) : AuthenticationService {
 
-    val apiKey: String = SpringContainer[HuobiService::class.java].runtimeConfig.apiKey!!
-    val secretKey: String = SpringContainer[HuobiService::class.java].runtimeConfig.secretKey!!
-
     override fun signedHttpRequest(method: String, path: String, params: MutableMap<String, Any>, headers: MutableMap<String, String>) {
+        val apiKey: String = SpringContainer[HuobiService::class.java].runtimeConfig.apiKey!!
+        val secretKey: String = SpringContainer[HuobiService::class.java].runtimeConfig.secretKey!!
         params["AccessKeyId"] = apiKey
         params["SignatureMethod"] = "HmacSHA256"
         params["SignatureVersion"] = "2"

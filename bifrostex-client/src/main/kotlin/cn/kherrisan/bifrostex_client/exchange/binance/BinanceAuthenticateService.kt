@@ -9,13 +9,11 @@ import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 
 @Component
-@Lazy
 class BinanceAuthenticateService : AuthenticationService {
 
-    val apiKey = SpringContainer[BinanceService::class.java].runtimeConfig.apiKey
-    val apiSecret = SpringContainer[BinanceService::class.java].runtimeConfig.secretKey
-
     override fun signedHttpRequest(method: String, path: String, params: MutableMap<String, Any>, headers: MutableMap<String, String>) {
+        val apiKey = SpringContainer[BinanceService::class.java].runtimeConfig.apiKey
+        val apiSecret = SpringContainer[BinanceService::class.java].runtimeConfig.secretKey
         headers["X-MBX-APIKEY"] = apiKey!!
         params["recvWindow"] = "60000"
         params["timestamp"] = System.currentTimeMillis().toString()
