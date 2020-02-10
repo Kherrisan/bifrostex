@@ -17,7 +17,6 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,8 +28,9 @@ import java.util.concurrent.ConcurrentHashMap
 @Component
 class BinanceSpotMarketService @Autowired constructor(
         staticConfiguration: BinanceStaticConfiguration,
-        dataAdaptor: BinanceServiceDataAdaptor
-) : AbstractSpotMarketService(staticConfiguration, dataAdaptor) {
+        dataAdaptor: BinanceServiceDataAdaptor,
+        metaInfo: BinanceMetaInfo
+) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
 
     @Autowired
     private lateinit var vertx: Vertx

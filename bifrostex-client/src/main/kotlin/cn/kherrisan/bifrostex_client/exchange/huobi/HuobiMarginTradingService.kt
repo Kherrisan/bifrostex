@@ -23,7 +23,8 @@ import java.util.*
 @Component
 class HuobiMarginTradingService @Autowired constructor(
         staticConfig: HuobiStaticConfiguration,
-        dataAdaptor: HuobiServiceDataAdaptor
+        dataAdaptor: HuobiServiceDataAdaptor,
+        val metaInfo: HuobiMetaInfo
 ) : AbstractMarginTradingService(staticConfig, dataAdaptor, HuobiAuthenticateService(staticConfig.marginTradingHttpHost)) {
 
     @Autowired

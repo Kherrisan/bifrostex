@@ -20,8 +20,9 @@ import java.util.*
 @Component
 class GateioSpotMarketService @Autowired constructor(
         staticConfiguration: GateioStaticConfiguration,
-        dataAdaptor: GateioServiceDataAdaptor
-) : AbstractSpotMarketService(staticConfiguration, dataAdaptor) {
+        dataAdaptor: GateioServiceDataAdaptor,
+        metaInfo: GateioMetaInfo
+) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
 
     @Autowired
     override lateinit var dispatcher: GateioWebsocketDispatcher

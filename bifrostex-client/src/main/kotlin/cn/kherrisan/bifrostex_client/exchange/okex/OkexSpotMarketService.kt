@@ -22,8 +22,9 @@ import java.util.*
 @Component
 class OkexSpotMarketService @Autowired constructor(
         staticConfiguration: OkexStaticConfiguration,
-        dataAdaptor: OkexServiceDataAdaptor
-) : AbstractSpotMarketService(staticConfiguration, dataAdaptor) {
+        dataAdaptor: OkexServiceDataAdaptor,
+        metaInfo: OkexMetaInfo
+) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
 
     @Autowired
     private lateinit var auth: OkexAuthenticateService

@@ -1,15 +1,13 @@
 package cn.kherrisan.bifrostex_client.core.service
 
 import cn.kherrisan.bifrostex_client.core.DefaultWebsocketDispatcher
-import cn.kherrisan.bifrostex_client.core.common.ExchangeStaticConfiguration
-import cn.kherrisan.bifrostex_client.core.common.HttpUtils
-import cn.kherrisan.bifrostex_client.core.common.IHttpUtils
-import cn.kherrisan.bifrostex_client.core.common.ServiceDataAdaptor
+import cn.kherrisan.bifrostex_client.core.common.*
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpService
 import cn.kherrisan.bifrostex_client.core.http.VertxHttpService
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
+import cn.kherrisan.bifrostex_client.entity.CurrencyMetaInfo
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -17,13 +15,19 @@ import com.google.gson.JsonParser
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.Autowired
 import java.nio.charset.StandardCharsets
+import javax.annotation.PostConstruct
 
 abstract class AbstractSpotMarketService(val staticConfig: ExchangeStaticConfiguration,
-                                         val dataAdaptor: ServiceDataAdaptor)
+                                         val dataAdaptor: ServiceDataAdaptor,
+                                         val metaInfo: ExchangeMetaInfo)
     : SpotMarketService
         , HttpService
         , ServiceDataAdaptor by dataAdaptor
@@ -35,7 +39,40 @@ abstract class AbstractSpotMarketService(val staticConfig: ExchangeStaticConfigu
     open val dispatcher: WebsocketDispatcher = DefaultWebsocketDispatcher()
 
     @Autowired
-    lateinit var http: VertxHttpService
+    private lateinit var http: VertxHttpService
+
+    @Autowired
+    private lateinit var vertx: Vertx
+
+    @PostConstruct
+    fun initAbstractSpotMarketService() {
+        runBlocking {
+            for (i in listOf(
+                    initCurrencyList(),
+                    initSymbolMetaInfo()
+            )) {
+                i.join()
+            }
+        }
+    }
+
+    suspend fun CoroutineScope.initCurrencyList(): Job = launch(vertx.dispatcher()) {
+        metaInfo.currencyList = getCurrencies()
+    }
+
+    suspend fun CoroutineScope.initSymbolMetaInfo(): Job = launch(vertx.dispatcher()) {
+        getSymbolMetaInfo().forEach {
+            metaInfo.symbolMetaInfo[it.symbol] = it
+            if (!metaInfo.currencyMetaInfo.containsKey(it.symbol.base)) {
+                metaInfo.currencyMetaInfo[it.symbol.base] = CurrencyMetaInfo(it.symbol.base, 0)
+            }
+            metaInfo.currencyMetaInfo[it.symbol.base]!!.smallerSizeIncrement(it.sizeIncrement)
+            if (!metaInfo.currencyMetaInfo.containsKey(it.symbol.quote)) {
+                metaInfo.currencyMetaInfo[it.symbol.quote] = CurrencyMetaInfo(it.symbol.quote, 0)
+            }
+            metaInfo.currencyMetaInfo[it.symbol.quote]!!.smallerSizeIncrement(it.volumeIncrement)
+        }
+    }
 
     val logger = LogManager.getLogger()
 

@@ -24,8 +24,9 @@ import java.util.*
 @Component
 class PoloniexSpotMarketService @Autowired constructor(
         staticConfiguration: PoloniexStaticConfiguration,
-        dataAdaptor: PoloniexServiceDataAdaptor
-) : AbstractSpotMarketService(staticConfiguration, dataAdaptor) {
+        dataAdaptor: PoloniexServiceDataAdaptor,
+        metaInfo: PoloniexMetaInfo
+) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
     override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
         throw NotImplementedError()
     }

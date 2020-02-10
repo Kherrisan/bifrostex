@@ -27,8 +27,9 @@ import kotlin.collections.HashMap
 @Component
 class HuobiSpotMarketService @Autowired constructor(
         staticConfig: HuobiStaticConfiguration,
-        dataAdaptor: HuobiServiceDataAdaptor
-) : AbstractSpotMarketService(staticConfig, dataAdaptor) {
+        dataAdaptor: HuobiServiceDataAdaptor,
+        metaInfo: HuobiMetaInfo
+) : AbstractSpotMarketService(staticConfig, dataAdaptor, metaInfo) {
 
     @Autowired
     override lateinit var dispatcher: HuobiWebsocketDispatcher

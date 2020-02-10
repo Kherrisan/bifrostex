@@ -32,11 +32,9 @@ import javax.annotation.PostConstruct
 @Component
 class HuobiSpotTradingService @Autowired constructor(
         staticConfig: HuobiStaticConfiguration,
-        dataAdaptor: HuobiServiceDataAdaptor
+        dataAdaptor: HuobiServiceDataAdaptor,
+        val metaInfo: HuobiMetaInfo
 ) : AbstractSpotTradingService(staticConfig, dataAdaptor, HuobiAuthenticateService(staticConfig.spotTradingHttpHost)) {
-
-    @Autowired
-    lateinit var metaInfo: HuobiMetaInfo
 
     @PostConstruct
     fun initAccountIdMap() {

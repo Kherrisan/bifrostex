@@ -10,6 +10,7 @@ import com.google.gson.JsonObject
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.*
+import javax.annotation.PostConstruct
 
 abstract class AbstractServiceDataAdaptor(val metaInfo: ExchangeMetaInfo)
     : ServiceDataAdaptor {

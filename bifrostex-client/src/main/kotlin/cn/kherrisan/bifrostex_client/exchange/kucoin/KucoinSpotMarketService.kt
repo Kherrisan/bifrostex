@@ -25,14 +25,15 @@ import javax.annotation.PostConstruct
 @Component
 class KucoinSpotMarketService @Autowired constructor(
         staticConfiguration: KucoinStaticConfiguration,
-        dataAdaptor: KucoinSerivceDataAdaptor
-) : AbstractSpotMarketService(staticConfiguration, dataAdaptor) {
+        dataAdaptor: KucoinSerivceDataAdaptor,
+        metaInfo: KucoinMetaInfo
+) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
 
     @Autowired
     private lateinit var auth: KucoinAuthenticateService
 
     @PostConstruct
-    fun initInstanceServer(){
+    fun initInstanceServer() {
         runBlocking {
             val instance = getInstanceServer()
             staticConfig.spotMarketWsHost = "${instance.url}?token=${instance.token}&connectId=${md5(uuid())}&acceptUserMessage=true"
