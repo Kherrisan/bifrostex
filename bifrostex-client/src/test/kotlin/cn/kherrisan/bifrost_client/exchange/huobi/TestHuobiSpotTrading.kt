@@ -1,10 +1,7 @@
 package cn.kherrisan.bifrost_client.exchange.huobi
 
-import cn.kherrisan.bifrost_client.common.GROUP_HUOBI
-import cn.kherrisan.bifrost_client.common.SUIT_SPOT_TRADING_METHOD
 import cn.kherrisan.bifrost_client.common.TestSpotTradingMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
 import cn.kherrisan.bifrostex_client.core.common.SpringContainer
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.entity.BTC
@@ -14,16 +11,13 @@ import cn.kherrisan.bifrostex_client.entity.USDT
 import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 import java.time.ZonedDateTime
 import java.util.*
 
 class TestHuobiSpotTrading : TestSpotTradingMethod() {
     override val exchangeName: ExchangeName = ExchangeName.HUOBI
-    override val rtConfig = RuntimeConfiguration(
-            apiKey = "zrfc4v5b6n-f2c7f45f-b338b7f4-8412c",
-            secretKey = "f421cfcf-b422e894-3a57aedd-7bb0f")
 
     /**
      * 测试限价买

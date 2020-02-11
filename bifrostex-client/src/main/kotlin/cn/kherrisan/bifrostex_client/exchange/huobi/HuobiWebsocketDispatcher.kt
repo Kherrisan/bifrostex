@@ -12,8 +12,9 @@ import org.springframework.stereotype.Component
 
 @Component
 class HuobiWebsocketDispatcher @Autowired constructor(
-        val staticConfig: HuobiStaticConfiguration
-) : WebsocketDispatcher() {
+        val staticConfig: HuobiStaticConfiguration,
+        runtimeConfig: HuobiRuntimeConfig
+) : WebsocketDispatcher(runtimeConfig) {
 
     override val host: String = staticConfig.spotMarketWsHost
     override val name: ExchangeName = ExchangeName.HUOBI

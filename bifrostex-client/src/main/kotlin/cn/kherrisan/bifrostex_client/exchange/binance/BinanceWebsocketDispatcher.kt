@@ -6,15 +6,16 @@ import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.Promise
-import io.vertx.core.Vertx
 import kotlinx.coroutines.CoroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
 
 @Component
-open class BinanceWebsocketDispatcher @Autowired constructor(staticConfig: BinanceStaticConfiguration)
-    : WebsocketDispatcher() {
+open class BinanceWebsocketDispatcher @Autowired constructor(
+        staticConfig: BinanceStaticConfiguration,
+        runtimeConfig: BinanceRuntimeConfig
+) : WebsocketDispatcher(runtimeConfig) {
 
     override val host: String = staticConfig.spotMarketWsHost
     override val name: ExchangeName = ExchangeName.BINANCE
@@ -22,9 +23,6 @@ open class BinanceWebsocketDispatcher @Autowired constructor(staticConfig: Binan
     val idMap = HashMap<Int, String>()
     var pongTimer: Long? = null
     var pongPromise: Promise<Any>? = null
-
-    @Autowired
-    private lateinit var vertx: Vertx
 
     override suspend fun handleCommandResponse(elem: JsonElement) {
         val obj = elem.asJsonObject

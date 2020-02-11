@@ -1,7 +1,5 @@
 package cn.kherrisan.bifrost_client.exchange.binance
 
-import cn.kherrisan.bifrost_client.common.GROUP_BINANCE
-import cn.kherrisan.bifrost_client.common.SUIT_SPOT_MARKET_WS_METHOD
 import cn.kherrisan.bifrost_client.common.TestSubscribeMarketMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.entity.Depth
@@ -12,7 +10,7 @@ import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class TestBinanceSpotMarketWs : TestSubscribeMarketMethod() {
     override val name: ExchangeName = ExchangeName.BINANCE

@@ -7,7 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 @Component
-class PoloniexWebsocketDispatcher @Autowired constructor(val staticConfiguration: PoloniexStaticConfiguration) : WebsocketDispatcher() {
+class PoloniexWebsocketDispatcher @Autowired constructor(
+        val staticConfiguration: PoloniexStaticConfiguration,
+        runtimeConfig: PoloniexRuntimeConfig
+) : WebsocketDispatcher(runtimeConfig) {
+
     override val host: String = staticConfiguration.spotMarketWsHost
     override val name: ExchangeName = ExchangeName.POLONIEX
 

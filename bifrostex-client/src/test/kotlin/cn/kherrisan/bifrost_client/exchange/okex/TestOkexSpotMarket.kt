@@ -1,19 +1,16 @@
 package cn.kherrisan.bifrost_client.exchange.okex
 
-import cn.kherrisan.bifrost_client.common.GROUP_OKEX
-import cn.kherrisan.bifrost_client.common.SUIT_SPOT_MARKET_METHOD
 import cn.kherrisan.bifrost_client.common.TestQueryMarketMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
 import cn.kherrisan.bifrostex_client.core.common.SpringContainer
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.Symbol
-import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
 import cn.kherrisan.bifrostex_client.exchange.okex.OkexMetaInfo
-import cn.kherrisan.bifrostex_client.exchange.okex.OkexService
+import cn.kherrisan.bifrostex_client.exchange.okex.OkexRuntimeConfig
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -22,10 +19,9 @@ import kotlin.random.Random
 
 class TestOkexSpotMarket : TestQueryMarketMethod() {
     override val name: ExchangeName = ExchangeName.OKEX
-    override val rtConfig: RuntimeConfiguration = RuntimeConfiguration(
-            apiKey = "abc30b71-f30f-4a17-aa3c-5470a8cc2f79",
-            secretKey = "8AFAEB40EB6F7D89363741BAD64476A3",
-            password = "Q4y4VghDdsCqR3ZR")
+
+    @Autowired
+    override lateinit var rtConfig: OkexRuntimeConfig
 
     @Test
     fun testGetSymbolMetaInfo() = runBlocking {

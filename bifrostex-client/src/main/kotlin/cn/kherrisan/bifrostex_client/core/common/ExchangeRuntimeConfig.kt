@@ -1,7 +1,7 @@
 package cn.kherrisan.bifrostex_client.core.common
 
 @Open
-data class RuntimeConfiguration(
+data class ExchangeRuntimeConfig(
         var proxyHost: String? = null,
 
         var proxyPort: Int? = null,
@@ -27,6 +27,4 @@ data class RuntimeConfiguration(
         var pingInterval: Int? = null,
 
         var pingTimeout: Int? = null
-
-
 )

@@ -21,7 +21,8 @@ import java.util.*
 class GateioSpotMarketService @Autowired constructor(
         staticConfiguration: GateioStaticConfiguration,
         dataAdaptor: GateioServiceDataAdaptor,
-        metaInfo: GateioMetaInfo
+        metaInfo: GateioMetaInfo,
+        val runtimeConfig: GateioRuntimeConfig
 ) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
 
     @Autowired
@@ -173,7 +174,7 @@ class GateioSpotMarketService @Autowired constructor(
      */
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
         val ch = "depth:${Gson().toJson(listOf(string(symbol), 5, "0.01"))}"
-        val dispatcher = GateioSingleChannelDispatcher(staticConfig as GateioStaticConfiguration, "depth:${string(symbol)}")
+        val dispatcher = GateioSingleChannelDispatcher(staticConfig as GateioStaticConfiguration, "depth:${string(symbol)}", runtimeConfig)
         return newSubscription<Depth>(ch, dispatcher) { obj, sub ->
             val params = obj.asJsonObject["params"].asJsonArray
             val clean = params[0].asBoolean
@@ -233,7 +234,7 @@ class GateioSpotMarketService @Autowired constructor(
 
     override suspend fun subscribeKline(symbol: Symbol, period: KlinePeriodEnum): Subscription<Kline> {
         val args = "kline:${listOf(string(symbol), string(period).toInt())}"
-        val dispatcher = GateioWebsocketDispatcher(staticConfig as GateioStaticConfiguration)
+        val dispatcher = GateioWebsocketDispatcher(staticConfig as GateioStaticConfiguration, runtimeConfig)
         return newSubscription<Kline>(args, dispatcher) { obj, sub ->
             obj.asJsonObject["params"].asJsonArray.map { it.asJsonArray }
                     .map {

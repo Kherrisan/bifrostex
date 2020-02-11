@@ -5,14 +5,16 @@
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout
-                    pattern="%highlight{[%level{length=5}]} %style{%date{ISO8601}}{blue} %thread %style{%c{2}.%method}{cyan}(%file:%line): %style{%msg%n}{green}"/>
+                    pattern="%highlight{[%level{length=5}]} %style{%date{ISO8601}}{blue} %style{%thread}{Magenta} %style{%c{1}.%method}{blue}(%file:%line): %highlight{%msg%n}"/>
         </Console>
     </Appenders>
 
     <!-- Loggers支持配置多个Logger，可引用不同的目标Appender，也可根据业务需求定制特定要求的Appender -->
     <Loggers>
-        <Root level="info">
+        <Root level="debug">
             <AppenderRef ref="Console"/>
         </Root>
+        <Logger name="io.netty" level="error"/>
+        <Logger name="org.springframework" level="info"/>
     </Loggers>
 </Configuration>

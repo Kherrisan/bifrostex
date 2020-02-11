@@ -20,12 +20,11 @@ import java.util.*
 @Component
 class OkexMarginTradingService @Autowired constructor(
         staticConfiguration: OkexStaticConfiguration,
-        dataAdaptor: OkexServiceDataAdaptor,
-        authenticateService: OkexAuthenticateService
-) : AbstractMarginTradingService(staticConfiguration, dataAdaptor, authenticateService) {
+        dataAdaptor: OkexServiceDataAdaptor
+) : AbstractMarginTradingService(staticConfiguration, dataAdaptor, OkexAuthenticateService(staticConfiguration.marginTradingHttpHost)) {
 
     @Autowired
-    private lateinit var spot:OkexSpotTradingService
+    private lateinit var spot: OkexSpotTradingService
 
     override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
         val obj = JsonParser.parseString(resp.bodyAsString())

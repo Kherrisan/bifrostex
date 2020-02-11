@@ -5,7 +5,6 @@ import cn.kherrisan.bifrostex_client.core.common.iid
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.Gson
 import com.google.gson.JsonParser
-import io.vertx.core.Vertx
 import io.vertx.kotlin.coroutines.awaitEvent
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -15,13 +14,7 @@ import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
 
 @Component
-class KucoinWebsocketDispatcher : WebsocketDispatcher() {
-
-    @Autowired
-    private lateinit var service: KucoinService
-
-    @Autowired
-    private lateinit var vertx: Vertx
+class KucoinWebsocketDispatcher @Autowired constructor(runtimeConfig: KucoinRuntimeConfig) : WebsocketDispatcher(runtimeConfig) {
 
     override val host: String = ""
     override val name: ExchangeName = ExchangeName.KUCOIN
@@ -30,7 +23,7 @@ class KucoinWebsocketDispatcher : WebsocketDispatcher() {
 
     private suspend fun CoroutineScope.resetPingTimer() {
         launch(vertx.dispatcher()) {
-            awaitEvent<Long> { vertx.setTimer(service.runtimeConfig.pingInterval!!.toLong(), it) }
+            awaitEvent<Long> { vertx.setTimer(runtimeConfig.pingInterval!!.toLong(), it) }
             send(Gson().toJson(mapOf("id" to iid(), "type" to "ping")))
         }
     }

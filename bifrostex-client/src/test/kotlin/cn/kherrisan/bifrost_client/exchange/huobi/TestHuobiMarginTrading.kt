@@ -1,26 +1,19 @@
 package cn.kherrisan.bifrost_client.exchange.huobi
 
-import cn.kherrisan.bifrost_client.common.GROUP_HUOBI
-import cn.kherrisan.bifrost_client.common.SUIT_MARGIN_TRADING_METHOD
 import cn.kherrisan.bifrost_client.common.TestMarginTradingMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
 import cn.kherrisan.bifrostex_client.core.common.SpringContainer
 import cn.kherrisan.bifrostex_client.entity.BTC
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.USDT
-import cn.kherrisan.bifrostex_client.exchange.binance.BinanceMetaInfo
 import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 class TestHuobiMarginTrading : TestMarginTradingMethod() {
 
     override val exchangeName: ExchangeName = ExchangeName.HUOBI
-    override val rtConfig = RuntimeConfiguration(
-            apiKey = "zrfc4v5b6n-f2c7f45f-b338b7f4-8412c",
-            secretKey = "f421cfcf-b422e894-3a57aedd-7bb0f")
 
     @Test
     @Disabled

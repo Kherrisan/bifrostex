@@ -2,23 +2,17 @@ package cn.kherrisan.bifrost_client.exchange.binance
 
 import cn.kherrisan.bifrost_client.common.TestSpotTradingMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 import java.time.ZonedDateTime
 import java.util.*
 
 class TestBinanceSpotTrading : TestSpotTradingMethod() {
     override val exchangeName: ExchangeName
         get() = ExchangeName.BINANCE
-    override val rtConfig: RuntimeConfiguration
-        get() = RuntimeConfiguration(
-                apiKey = "Mgo20lfO5YJhA9FxXRftjzg1T8TTZfWSk8UO88B3aGjxedEQc3k6E7AThW1WaDep",
-                secretKey = "Iomxh91cVZJLsY92KC5cDlrAy6VC2tn5oGPqlLOcH75EvTKakmfVZWerRA6d00wa"
-        )
 
     @Test
     fun testGetBalance() = runBlocking {

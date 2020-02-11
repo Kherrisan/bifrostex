@@ -45,7 +45,7 @@ abstract class AbstractSpotMarketService(val staticConfig: ExchangeStaticConfigu
     private lateinit var vertx: Vertx
 
     @PostConstruct
-    fun initAbstractSpotMarketService() {
+    fun initMetaInfo() {
         runBlocking {
             for (i in listOf(
                     initCurrencyList(),

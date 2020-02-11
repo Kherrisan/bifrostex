@@ -1,7 +1,5 @@
 package cn.kherrisan.bifrost_client.exchange.binance
 
-import cn.kherrisan.bifrost_client.common.GROUP_BINANCE
-import cn.kherrisan.bifrost_client.common.SUIT_SPOT_MARKET_METHOD
 import cn.kherrisan.bifrost_client.common.TestQueryMarketMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.SpringContainer
@@ -10,7 +8,7 @@ import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.Symbol
 import cn.kherrisan.bifrostex_client.exchange.binance.BinanceMetaInfo
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -19,19 +17,20 @@ import kotlin.random.Random
 
 
 class TestBinanceSpotMarket : TestQueryMarketMethod() {
+
     override val name: ExchangeName = ExchangeName.BINANCE
 
     @Test
     fun testGetSymbolMetaInfo() = runBlocking {
         val metaInfo = spotMarketService.getSymbolMetaInfo()
-        logger.info(metaInfo)
+        metaInfo.forEach { logger.info(it) }
         assert(metaInfo.size > 10)
     }
 
     @Test
     fun getAllSymbols() = runBlocking {
         val symbols = spotMarketService.getSymbols()
-        logger.info(symbols)
+        symbols.forEach { logger.info(it) }
         // 检查是否有足够多的symbols
         assert(symbols.size > 10)
         // 检查是否有重复的basequote字符串
@@ -44,7 +43,7 @@ class TestBinanceSpotMarket : TestQueryMarketMethod() {
     @Test
     fun testGetAllCurrencys() = runBlocking {
         val currencyList = spotMarketService.getCurrencies()
-        logger.info(currencyList)
+        currencyList.forEach { logger.info(it) }
         // 检查是否有足够多的currencys
         assert(currencyList.size > 10)
         // 检查是否有重复的currency
@@ -94,8 +93,10 @@ class TestBinanceSpotMarket : TestQueryMarketMethod() {
     fun getDepthForSth() = runBlocking {
         val metaInfo = SpringContainer[BinanceMetaInfo::class.java]
         val depth = spotMarketService.getDepths(BTC_USDT, 20)
-        val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         logger.info(depth)
+        depth.asks.forEach { logger.info(it) }
+        depth.bids.forEach { logger.info(it) }
+        val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         // 检查最高卖价是否高于最低买价
         val minAsk = depth.asks.last()
         val maxBid = depth.bids.first()
@@ -133,7 +134,7 @@ class TestBinanceSpotMarket : TestQueryMarketMethod() {
     fun getTradesForSth() = runBlocking {
         val metaInfo = SpringContainer[BinanceMetaInfo::class.java]
         val trades = spotMarketService.getTrades(BTC_USDT, 15)
-        logger.info(trades)
+        trades.forEach { logger.info(it) }
         // 检查trade的symbol
         trades.forEach { assert(it.symbol == symbol) }
         val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
@@ -155,7 +156,7 @@ class TestBinanceSpotMarket : TestQueryMarketMethod() {
         val size = Random.nextInt(5, 20)
         // 测试一个月之前的数据
         val klines = spotMarketService.getKlines(BTC_USDT, KlinePeriodEnum._1DAY, size, Date(startTime.toInstant().toEpochMilli()))
-        logger.info(klines)
+        klines.forEach { logger.info(it) }
         val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         // 检查kline数量
         assert(klines.size == size || klines.size == size + 1)

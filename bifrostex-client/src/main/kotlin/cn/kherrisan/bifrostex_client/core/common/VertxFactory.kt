@@ -4,6 +4,12 @@ import io.vertx.core.Vertx
 import org.springframework.context.annotation.Bean
 import org.springframework.stereotype.Component
 
+object VertxContainer {
+    private val instance: Vertx = Vertx.vertx()
+
+    fun vertx(): Vertx = instance
+}
+
 /**
  * Vertx 工厂类
  */
@@ -17,5 +23,5 @@ class VertxFactory {
      * @return Vertx
      */
     @Bean
-    fun vertx(): Vertx = Vertx.vertx()
+    fun vertx(): Vertx = VertxContainer.vertx()
 }

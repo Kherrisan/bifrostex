@@ -6,22 +6,19 @@ import cn.kherrisan.bifrostex_client.core.common.SpringContainer
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.Symbol
-import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiConfig
 import cn.kherrisan.bifrostex_client.exchange.huobi.HuobiMetaInfo
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
-import org.springframework.beans.factory.annotation.Autowired
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.*
 import kotlin.random.Random
 
-
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestHuobiSpotMarket : TestQueryMarketMethod() {
 
-    @Autowired
-    override lateinit var rtConfig: HuobiConfig
     override val name: ExchangeName = ExchangeName.HUOBI
 
     @Test
@@ -34,7 +31,7 @@ class TestHuobiSpotMarket : TestQueryMarketMethod() {
     @Test
     fun getAllSymbols() = runBlocking {
         val symbols = spotMarketService.getSymbols()
-        logger.debug(symbols)
+        symbols.forEach { logger.info(it) }
         // 检查是否有足够多的symbols
         assert(symbols.size > 10)
         // 检查是否有重复的basequote字符串
@@ -47,7 +44,7 @@ class TestHuobiSpotMarket : TestQueryMarketMethod() {
     @Test
     fun testGetAllCurrencys() = runBlocking {
         val currencyList = spotMarketService.getCurrencies()
-        logger.debug(currencyList)
+        currencyList.forEach { logger.info(it) }
         // 检查是否有足够多的currencys
         assert(currencyList.size > 10)
         // 检查是否有重复的currency
@@ -106,8 +103,10 @@ class TestHuobiSpotMarket : TestQueryMarketMethod() {
     fun getDepthForSth() = runBlocking {
         val metaInfo = SpringContainer[HuobiMetaInfo::class.java]
         val depth = spotMarketService.getDepths(BTC_USDT, 20)
-        val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         logger.debug(depth)
+        depth.asks.forEach { logger.info(it) }
+        depth.bids.forEach { logger.info(it) }
+        val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         // 检查最低买价是否高于最高卖价
         val minAsk = depth.asks.last()
         val maxBid = depth.bids.first()
@@ -143,10 +142,10 @@ class TestHuobiSpotMarket : TestQueryMarketMethod() {
 
     @Test
     fun getTradesForSth() = runBlocking {
-        val trades = spotMarketService.getTrades(symbol, 15)
-        logger.debug(trades)
+        val trades = spotMarketService.getTrades(BTC_USDT, 15)
+        trades.forEach { logger.info(it) }
         // 检查trade的symbol
-        trades.forEach { assert(it.symbol == symbol) }
+        trades.forEach { assert(it.symbol == BTC_USDT) }
         // 检查trade是否按照time的递增顺序排列
         var last: Date? = null
         for (t in trades) {
@@ -162,7 +161,7 @@ class TestHuobiSpotMarket : TestQueryMarketMethod() {
         val size = Random.nextInt(5, 20)
         // 测试一个月之前的数据
         val klines = spotMarketService.getKlines(BTC_USDT, KlinePeriodEnum._1DAY, size, Date(startTime.toInstant().toEpochMilli()))
-        logger.debug(klines)
+        klines.forEach { logger.info(it) }
         val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         // 检查kline数量
         assert(klines.size == size || klines.size == size + 1)

@@ -12,9 +12,8 @@ import java.util.*
 @Component
 class KucoinSpotTradingService @Autowired constructor(
         staticConfiguration: KucoinStaticConfiguration,
-        dataAdaptor: KucoinSerivceDataAdaptor,
-        authenticateService: KucoinAuthenticateService
-) : AbstractSpotTradingService(staticConfiguration, dataAdaptor, authenticateService) {
+        dataAdaptor: KucoinSerivceDataAdaptor
+) : AbstractSpotTradingService(staticConfiguration, dataAdaptor, KucoinAuthenticateService(staticConfiguration.spotTradingHttpHost)) {
     override suspend fun getBalance(): Map<Currency, SpotBalance> {
         throw NotImplementedError()
     }

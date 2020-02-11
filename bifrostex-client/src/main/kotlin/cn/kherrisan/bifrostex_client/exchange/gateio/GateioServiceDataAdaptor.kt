@@ -1,8 +1,6 @@
 package cn.kherrisan.bifrostex_client.exchange.gateio
 
 import cn.kherrisan.bifrostex_client.core.common.AbstractServiceDataAdaptor
-import cn.kherrisan.bifrostex_client.core.common.Compound
-import cn.kherrisan.bifrostex_client.core.common.ExchangeMetaInfo
 import cn.kherrisan.bifrostex_client.core.common.MyDate
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum

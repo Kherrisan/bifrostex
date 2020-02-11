@@ -26,19 +26,19 @@ import javax.annotation.PostConstruct
 class KucoinSpotMarketService @Autowired constructor(
         staticConfiguration: KucoinStaticConfiguration,
         dataAdaptor: KucoinSerivceDataAdaptor,
-        metaInfo: KucoinMetaInfo
+        metaInfo: KucoinMetaInfo,
+        val runtimeConfig: KucoinRuntimeConfig
 ) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
 
-    @Autowired
-    private lateinit var auth: KucoinAuthenticateService
+    private val auth = KucoinAuthenticateService(staticConfiguration.spotMarketHttpHost)
 
     @PostConstruct
     fun initInstanceServer() {
         runBlocking {
             val instance = getInstanceServer()
             staticConfig.spotMarketWsHost = "${instance.url}?token=${instance.token}&connectId=${md5(uuid())}&acceptUserMessage=true"
-            RuntimeConfigContainer[ExchangeName.KUCOIN]!!.pingTimeout = instance.pingTimeout
-            RuntimeConfigContainer[ExchangeName.KUCOIN]!!.pingInterval = instance.pingInterval
+            runtimeConfig.pingTimeout = instance.pingTimeout
+            runtimeConfig.pingInterval = instance.pingInterval
             val privateInstance = getPrivateInstanceServer()
             staticConfig.spotTradingWsHost = "${privateInstance.url}?token=${privateInstance.token}&connectId=${md5(uuid())}&acceptUserMessage=true"
         }
@@ -301,7 +301,7 @@ class KucoinSpotMarketService @Autowired constructor(
      * @return Subscription<Trade>
      */
     override suspend fun subscribeTrade(symbol: Symbol): Subscription<Trade> {
-        val dispatcher = KucoinWebsocketDispatcher()
+        val dispatcher = KucoinWebsocketDispatcher(runtimeConfig)
         val ch = "/market/match:${string(symbol)}"
         val sub = newSubscription<Trade>(ch, dispatcher) { it, sub ->
             val data = it.asJsonObject["data"].asJsonObject

@@ -7,11 +7,10 @@ import java.util.*
 
 class OkexAuthenticateService(val host: String) : AuthenticationService {
 
-    private val apiKey = SpringContainer[OkexService::class.java].runtimeConfig.apiKey
-    private val apiSecret = SpringContainer[OkexService::class.java].runtimeConfig.secretKey
-    private val password = SpringContainer[OkexService::class.java].runtimeConfig.password
-
     override fun signedHttpRequest(method: String, path: String, params: MutableMap<String, Any>, headers: MutableMap<String, String>) {
+        val apiKey = SpringContainer[OkexService::class.java].runtimeConfig.apiKey
+        val apiSecret = SpringContainer[OkexService::class.java].runtimeConfig.secretKey
+        val password = SpringContainer[OkexService::class.java].runtimeConfig.password
         val subPath = path.removePrefix(host)
         val ts = iso8601WithMS()
         var payload = "${ts}${method}$subPath"

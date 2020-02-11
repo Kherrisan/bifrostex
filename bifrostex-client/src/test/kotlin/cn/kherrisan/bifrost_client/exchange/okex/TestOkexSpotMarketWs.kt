@@ -1,10 +1,8 @@
 package cn.kherrisan.bifrost_client.exchange.okex
 
-import cn.kherrisan.bifrost_client.common.GROUP_OKEX
-import cn.kherrisan.bifrost_client.common.SUIT_SPOT_MARKET_WS_METHOD
 import cn.kherrisan.bifrost_client.common.TestSubscribeMarketMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
+import cn.kherrisan.bifrostex_client.core.common.ExchangeRuntimeConfig
 import cn.kherrisan.bifrostex_client.entity.Depth
 import cn.kherrisan.bifrostex_client.entity.Kline
 import cn.kherrisan.bifrostex_client.entity.Ticker
@@ -13,11 +11,11 @@ import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class TestOkexSpotMarketWs : TestSubscribeMarketMethod() {
     override val name: ExchangeName = ExchangeName.OKEX
-    override val config: RuntimeConfiguration = RuntimeConfiguration(
+    override val config: ExchangeRuntimeConfig = ExchangeRuntimeConfig(
             apiKey = "abc30b71-f30f-4a17-aa3c-5470a8cc2f79",
             secretKey = "8AFAEB40EB6F7D89363741BAD64476A3",
             password = "Q4y4VghDdsCqR3ZR")

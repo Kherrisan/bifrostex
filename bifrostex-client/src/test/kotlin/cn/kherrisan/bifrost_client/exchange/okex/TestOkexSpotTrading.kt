@@ -1,27 +1,20 @@
 package cn.kherrisan.bifrost_client.exchange.okex
 
-import cn.kherrisan.bifrost_client.common.GROUP_OKEX
-import cn.kherrisan.bifrost_client.common.SUIT_SPOT_TRADING_METHOD
 import cn.kherrisan.bifrost_client.common.TestSpotTradingMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.common.RuntimeConfiguration
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.entity.BTC_USDT
 import cn.kherrisan.bifrostex_client.entity.USDT
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 import java.time.ZonedDateTime
 import java.util.*
 
 class TestOkexSpotTrading : TestSpotTradingMethod() {
     override val exchangeName: ExchangeName
         get() = ExchangeName.OKEX
-    override val rtConfig: RuntimeConfiguration
-        get() = RuntimeConfiguration(apiKey = "abc30b71-f30f-4a17-aa3c-5470a8cc2f79",
-                secretKey = "8AFAEB40EB6F7D89363741BAD64476A3",
-                password = "Q4y4VghDdsCqR3ZR")
 
     /**
      * 测试限价买

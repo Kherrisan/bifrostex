@@ -29,11 +29,15 @@ import java.util.concurrent.ConcurrentHashMap
 class BinanceSpotMarketService @Autowired constructor(
         staticConfiguration: BinanceStaticConfiguration,
         dataAdaptor: BinanceServiceDataAdaptor,
-        metaInfo: BinanceMetaInfo
+        metaInfo: BinanceMetaInfo,
+        val runtimeConfig: BinanceRuntimeConfig
 ) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
 
     @Autowired
     private lateinit var vertx: Vertx
+
+    @Autowired
+    override lateinit var dispatcher: BinanceWebsocketDispatcher
 
     override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
         val obj = JsonParser.parseString(resp.bodyAsString())
@@ -191,7 +195,7 @@ class BinanceSpotMarketService @Autowired constructor(
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
         var baseDepthPromise = Promise.promise<SequentialDepth>()
         val ch = "${symbol.nameWithoutSlash()}@depth@100ms"
-        val dedicatedDispatcher = BinanceSingleChannelDispatcher(staticConfig as BinanceStaticConfiguration, ch)
+        val dedicatedDispatcher = BinanceSingleChannelDispatcher(staticConfig as BinanceStaticConfiguration, ch, runtimeConfig)
         val sub = newSubscription<Depth>(ch, dedicatedDispatcher) { it, sub ->
             try {
                 val obj = it.asJsonObject
@@ -252,7 +256,7 @@ class BinanceSpotMarketService @Autowired constructor(
 
     override suspend fun subscribeDepthSnapshot(symbol: Symbol): Subscription<Depth> {
         val ch = "${symbol.nameWithoutSlash()}@depth5"
-        val dispatcher = BinanceSingleChannelDispatcher(staticConfig as BinanceStaticConfiguration, ch)
+        val dispatcher = BinanceSingleChannelDispatcher(staticConfig as BinanceStaticConfiguration, ch, runtimeConfig)
         return newSubscription<Depth>(ch, dispatcher) { resp, sub ->
             sub.deliver(depth(symbol, resp.asJsonObject))
         }.subscribe()

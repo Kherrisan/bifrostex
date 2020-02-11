@@ -5,25 +5,23 @@ import cn.kherrisan.bifrostex_client.core.common.d64ungzip
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.JsonParser
-import io.vertx.core.Vertx
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 const val PING_PERIOD = 20_1000L
 
 @Component
-class OkexWebsocketDispatcher(val staticConfiguration: OkexStaticConfiguration) : WebsocketDispatcher() {
+class OkexWebsocketDispatcher(
+        val staticConfiguration: OkexStaticConfiguration,
+        runtimeConfig: OkexRuntimeConfig
+) : WebsocketDispatcher(runtimeConfig) {
 
     override val host: String = staticConfiguration.spotMarketWsHost
     override val name: ExchangeName = ExchangeName.OKEX
     private var receivedInPeriod = false
-
-    @Autowired
-    private lateinit var vertx: Vertx
 
     fun CoroutineScope.resetPingTimer() {
         launch(vertx.dispatcher()) {

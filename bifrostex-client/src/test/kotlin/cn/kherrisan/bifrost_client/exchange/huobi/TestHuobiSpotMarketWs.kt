@@ -1,7 +1,5 @@
 package cn.kherrisan.bifrost_client.exchange.huobi
 
-import cn.kherrisan.bifrost_client.common.GROUP_HUOBI
-import cn.kherrisan.bifrost_client.common.SUIT_SPOT_MARKET_WS_METHOD
 import cn.kherrisan.bifrost_client.common.TestSubscribeMarketMethod
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.entity.Depth
@@ -12,7 +10,7 @@ import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class TestHuobiSpotMarketWs : TestSubscribeMarketMethod() {
 
@@ -28,6 +26,9 @@ class TestHuobiSpotMarketWs : TestSubscribeMarketMethod() {
                 val minAsk = depth.asks.last()
                 val maxBid = depth.bids.first()
                 logger.info("Min ask: $minAsk, max bid: $maxBid")
+                assert(minAsk.price > maxBid.price)
+                assert(minAsk.price.scale() == symbolMetaInfo.priceIncrement)
+                assert(maxBid.amount.scale() == symbolMetaInfo.sizeIncrement)
                 depthList.add(depth)
             }
         }
@@ -73,7 +74,6 @@ class TestHuobiSpotMarketWs : TestSubscribeMarketMethod() {
         delay(1000)
     }
 
-
     @Test
     fun testSubscribeTicker() = runBlocking(vertx.dispatcher()) {
         val tickerList = mutableListOf<Ticker>()
@@ -81,6 +81,10 @@ class TestHuobiSpotMarketWs : TestSubscribeMarketMethod() {
         val l = launch {
             while (true) {
                 val ticker = sub.receive()
+                assert(ticker.open.scale() == symbolMetaInfo.priceIncrement)
+                assert(ticker.high.scale() == symbolMetaInfo.priceIncrement)
+                assert(ticker.vol.scale() == symbolMetaInfo.volumeIncrement)
+                assert(ticker.amount.scale() == symbolMetaInfo.sizeIncrement)
                 logger.info("$ticker")
                 tickerList.add(ticker)
             }

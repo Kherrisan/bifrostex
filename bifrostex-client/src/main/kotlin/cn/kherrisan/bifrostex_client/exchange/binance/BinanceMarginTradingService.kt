@@ -1,6 +1,5 @@
 package cn.kherrisan.bifrostex_client.exchange.binance
 
-import cn.kherrisan.bifrostex_client.core.common.Compound
 import cn.kherrisan.bifrostex_client.core.enumeration.LoanStatusEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractMarginTradingService
@@ -11,7 +10,6 @@ import com.google.gson.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
@@ -98,7 +96,7 @@ class BinanceMarginTradingService @Autowired constructor(
      * @param currency Currency?
      * @return List<LoanOrder>
      */
-    @Compound
+
     override suspend fun getLoanOrders(symbol: Symbol, size: Int?, start: Date?, end: Date?, status: LoanStatusEnum, currency: Currency?): List<LoanOrder> {
         if (symbol != CROSS) {
             throw NotImplementedError()
@@ -152,7 +150,7 @@ class BinanceMarginTradingService @Autowired constructor(
      *
      * @return Map<Symbol, MarginInfo>
      */
-    @Compound
+
     override suspend fun getMarginInfo(): Map<Symbol, MarginInfo> {
         val minLoan = jsonArray(signedGet(authUrl("/sapi/v1/margin/allAssets")))
         val marginInfo = MarginInfo()

@@ -24,7 +24,6 @@ import java.math.BigDecimal
 import java.util.*
 import kotlin.collections.HashMap
 
-@Suppress("UNCHECKED_CAST")
 @Component
 class HuobiSpotMarketService @Autowired constructor(
         staticConfig: HuobiStaticConfiguration,

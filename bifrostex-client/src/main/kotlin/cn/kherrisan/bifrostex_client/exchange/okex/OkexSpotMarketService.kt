@@ -16,7 +16,6 @@ import io.vertx.ext.web.client.HttpResponse
 import kotlinx.coroutines.CoroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.math.BigDecimal
 import java.util.*
 
 @Component
@@ -26,8 +25,7 @@ class OkexSpotMarketService @Autowired constructor(
         metaInfo: OkexMetaInfo
 ) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
 
-    @Autowired
-    private lateinit var auth: OkexAuthenticateService
+    private var auth = OkexAuthenticateService(staticConfiguration.spotTradingHttpHost)
 
     override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
         val obj = JsonParser.parseString(resp.bodyAsString())

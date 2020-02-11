@@ -5,7 +5,7 @@
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout
-                    pattern="%highlight{[%level{length=5}]} %style{%date{ISO8601}}{blue} %style{%thread}{Magenta} %style{%c{1}.%method}{blue}(%file:%line): %highlight{%msg%n}"/>
+                    pattern="%style{%d{ABSOLUTE}}{blue} %style{%c{1}.%method}{blue}(%file:%line): %highlight{%msg%n}"/>
         </Console>
     </Appenders>
 
@@ -15,6 +15,6 @@
             <AppenderRef ref="Console"/>
         </Root>
         <Logger name="io.netty" level="error"/>
-        <Logger name="org.springframework" level="error"/>
+        <Logger name="org.springframework" level="info"/>
     </Loggers>
 </Configuration>

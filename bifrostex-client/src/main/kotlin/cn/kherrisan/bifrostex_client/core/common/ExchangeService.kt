@@ -5,11 +5,17 @@ import cn.kherrisan.bifrostex_client.core.service.SpotMarketService
 
 abstract class ExchangeService {
 
-    lateinit var runtimeConfig: RuntimeConfiguration
-
     lateinit var name: ExchangeName
 
-    val context: MutableMap<String, Any> = HashMap()
+    /**
+     * 用户运行时配置
+     */
+    open val runtimeConfig: ExchangeRuntimeConfig = ExchangeRuntimeConfig()
+
+    /**
+     * 交易过程中涉及到的元数据
+     */
+    open val metaInfo: ExchangeMetaInfo = ExchangeMetaInfo()
 
     /**
      * 现货行情服务接口

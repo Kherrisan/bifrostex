@@ -19,9 +19,8 @@ import java.util.*
 @Component
 class OkexSpotTradingService @Autowired constructor(
         staticConfiguration: OkexStaticConfiguration,
-        dataAdaptor: OkexServiceDataAdaptor,
-        authenticateService: OkexAuthenticateService
-) : AbstractSpotTradingService(staticConfiguration, dataAdaptor, authenticateService) {
+        dataAdaptor: OkexServiceDataAdaptor
+) : AbstractSpotTradingService(staticConfiguration, dataAdaptor, OkexAuthenticateService(staticConfiguration.spotTradingHttpHost)) {
 
     override fun checkResponse(http: HttpResponse<Buffer>): JsonElement {
         val e = JsonParser.parseString(http.bodyAsString())

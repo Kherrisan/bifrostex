@@ -1,7 +1,7 @@
 package cn.kherrisan.bifrostex_client.core.websocket
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.common.RuntimeConfigContainer
+import cn.kherrisan.bifrostex_client.core.common.ExchangeRuntimeConfig
 import cn.kherrisan.bifrostex_client.core.common.objSimpName
 import com.google.gson.JsonElement
 import io.vertx.core.Vertx
@@ -19,13 +19,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
 
-abstract class WebsocketDispatcher {
+abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
 
     /**
      * 注入全局的 vertx 单例对象
      */
     @Autowired
-    private lateinit var vertx: Vertx
+    open lateinit var vertx: Vertx
 
     abstract val host: String
     abstract val name: ExchangeName
@@ -68,7 +68,7 @@ abstract class WebsocketDispatcher {
 
     private fun buildHttpClientOptions(): HttpClientOptions {
         val options = HttpClientOptions()
-        val rt = RuntimeConfigContainer[name]!!
+        val rt = runtimeConfig
         if (rt.proxyHost != null && rt.proxyPort != null) {
             val po = ProxyOptions()
             po.host = rt.proxyHost

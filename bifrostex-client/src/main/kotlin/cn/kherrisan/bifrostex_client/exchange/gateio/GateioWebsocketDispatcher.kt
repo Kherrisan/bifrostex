@@ -14,8 +14,10 @@ import java.nio.charset.StandardCharsets
 val GATEIO_EMPTY_TRADE = OKEX_EMPTY_TRADE
 
 @Component
-open class GateioWebsocketDispatcher @Autowired constructor(staticConfiguration: GateioStaticConfiguration)
-    : WebsocketDispatcher() {
+open class GateioWebsocketDispatcher @Autowired constructor(
+        staticConfiguration: GateioStaticConfiguration,
+        runtimeConfig: GateioRuntimeConfig
+) : WebsocketDispatcher(runtimeConfig) {
 
     val idMap = HashMap<Int, String>()
     override val host: String = staticConfiguration.spotMarketWsHost

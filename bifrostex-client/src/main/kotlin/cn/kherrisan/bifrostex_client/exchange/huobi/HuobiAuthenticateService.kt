@@ -5,14 +5,13 @@ import cn.kherrisan.bifrostex_client.core.common.gmt
 import cn.kherrisan.bifrostex_client.core.common.hmacSHA256Signature
 import cn.kherrisan.bifrostex_client.core.common.sortedUrlEncode
 import cn.kherrisan.bifrostex_client.core.http.AuthenticationService
-import org.springframework.context.annotation.DependsOn
 import java.util.*
 
 class HuobiAuthenticateService(val host: String) : AuthenticationService {
 
     override fun signedHttpRequest(method: String, path: String, params: MutableMap<String, Any>, headers: MutableMap<String, String>) {
-        val apiKey: String = SpringContainer[HuobiService::class.java].runtimeConfig.apiKey!!
-        val secretKey: String = SpringContainer[HuobiService::class.java].runtimeConfig.secretKey!!
+        val apiKey: String = SpringContainer[HuobiRuntimeConfig::class].apiKey!!
+        val secretKey: String = SpringContainer[HuobiRuntimeConfig::class].secretKey!!
         params["AccessKeyId"] = apiKey
         params["SignatureMethod"] = "HmacSHA256"
         params["SignatureVersion"] = "2"

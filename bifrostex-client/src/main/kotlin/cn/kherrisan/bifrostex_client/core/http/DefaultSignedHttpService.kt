@@ -1,19 +1,16 @@
 package cn.kherrisan.bifrostex_client.core.http
 
-import cn.kherrisan.bifrostex_client.core.common.ExchangeService
 import cn.kherrisan.bifrostex_client.core.common.GET
 import cn.kherrisan.bifrostex_client.core.common.HttpUtils
 import cn.kherrisan.bifrostex_client.core.common.POST
+import cn.kherrisan.bifrostex_client.core.common.SpringContainer
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Component
 
 open class DefaultSignedHttpService(val auth: AuthenticationService) :
         HttpUtils(), SignedHttpService, HttpService {
 
-    @Autowired
-    private lateinit var http: VertxHttpService
+    private val http = SpringContainer[VertxHttpService::class.java]
 
     override fun auth(): AuthenticationService {
         return auth
