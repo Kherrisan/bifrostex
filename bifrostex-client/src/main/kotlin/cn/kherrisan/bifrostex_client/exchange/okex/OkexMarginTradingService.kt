@@ -228,6 +228,7 @@ class OkexMarginTradingService @Autowired constructor(
 
     override suspend fun cancelOrder(oid: String, symbol: Symbol): TransactionResult {
         val params = mutableMapOf("instrument_id" to string(symbol))
+        @Suppress("UNCHECKED_CAST")
         val resp = signedJsonPost(authUrl("/api/margin/v3/cancel_orders/$oid"), params as MutableMap<String, Any>)
         val obj = jsonObject(resp)
         return TransactionResult(obj["order_id"].asString, obj["result"].asBoolean, obj["error_message"].asString)

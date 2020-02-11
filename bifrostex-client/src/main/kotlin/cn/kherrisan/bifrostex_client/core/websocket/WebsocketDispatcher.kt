@@ -2,6 +2,7 @@ package cn.kherrisan.bifrostex_client.core.websocket
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.ExchangeRuntimeConfig
+import cn.kherrisan.bifrostex_client.core.common.VertxContainer
 import cn.kherrisan.bifrostex_client.core.common.objSimpName
 import com.google.gson.JsonElement
 import io.vertx.core.Vertx
@@ -15,7 +16,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
-import org.springframework.beans.factory.annotation.Autowired
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
 
@@ -24,8 +24,7 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
     /**
      * 注入全局的 vertx 单例对象
      */
-    @Autowired
-    open lateinit var vertx: Vertx
+    val vertx: Vertx = VertxContainer.vertx()
 
     abstract val host: String
     abstract val name: ExchangeName

@@ -19,7 +19,7 @@ interface SpotTradingService : SpotMarginTradingService {
     suspend fun getBalance(): Map<Currency, SpotBalance>
 
     /**
-     * 订阅账户余额增量数据
+     * 订阅账户余额的快照
      *
      * @param symbol Symbol
      * @return Subscription<SpotBalance>

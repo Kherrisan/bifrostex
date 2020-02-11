@@ -287,8 +287,9 @@ class BinanceSpotMarketService @Autowired constructor(
                     price(obj["c"], symbol),
                     price(obj["h"], symbol),
                     price(obj["l"], symbol),
-                    price(obj["a"], symbol),
-                    price(obj["b"], symbol)))
+                    price(obj["b"], symbol),
+                    price(obj["a"], symbol)
+            ))
         }.subscribe()
     }
 

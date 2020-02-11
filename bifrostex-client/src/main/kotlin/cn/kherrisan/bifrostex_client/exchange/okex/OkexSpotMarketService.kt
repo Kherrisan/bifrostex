@@ -1,6 +1,5 @@
 package cn.kherrisan.bifrostex_client.exchange.okex
 
-import cn.kherrisan.bifrostex_client.core.common.GET
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
@@ -25,7 +24,8 @@ class OkexSpotMarketService @Autowired constructor(
         metaInfo: OkexMetaInfo
 ) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
 
-    private var auth = OkexAuthenticateService(staticConfiguration.spotTradingHttpHost)
+    @Autowired
+    override lateinit var dispatcher: OkexWebsocketDispatcher
 
     override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
         val obj = JsonParser.parseString(resp.bodyAsString())
@@ -59,24 +59,19 @@ class OkexSpotMarketService @Autowired constructor(
                 }.sortedBy { it.symbol.base.name }
     }
 
-    suspend fun signedGet(url: String, params: MutableMap<String, String> = mutableMapOf(), headers: MutableMap<String, String> = mutableMapOf()): HttpResponse<Buffer> {
-        @Suppress("UNCHECKED_CAST")
-        auth.signedHttpRequest(GET, url, params as MutableMap<String, Any>, headers)
-        return get(url, params, headers)
-    }
-
     /**
      * 获得所有currency
-     *
-     * 只有Okex把这个接口设计成了需要验证的，不知道他们是怎么想的。
      *
      * @return List<Currency>
      */
     override suspend fun getCurrencies(): List<Currency> {
-        val resp = signedGet(publicUrl("/api/account/v3/currencies"))
-        return jsonArray(resp).map { it.asJsonObject }
-                .map { it["currency"].asString.toLowerCase() }.sorted()
-                .map { Currency(it) }
+        val symbols = getSymbols()
+        val set = mutableSetOf<Currency>()
+        symbols.forEach {
+            set.add(it.base)
+            set.add(it.quote)
+        }
+        return set.toList().sortedBy { it.name }
     }
 
     override suspend fun getTicker(symbol: Symbol): Ticker {

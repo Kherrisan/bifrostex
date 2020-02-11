@@ -314,10 +314,10 @@ class HuobiSpotTradingService @Autowired constructor(
     }
 
     override suspend fun subscribeBalance(symbol: Symbol): Subscription<SpotBalance> {
-        return super.subscribeBalance(symbol)
+        return super.subscribeBalance()
     }
 
     override suspend fun subscribeOrder(symbol: Symbol): Subscription<SpotOrder> {
-        return super.subscribeOrder(symbol)
+        return super.subscribeOrder()
     }
 }

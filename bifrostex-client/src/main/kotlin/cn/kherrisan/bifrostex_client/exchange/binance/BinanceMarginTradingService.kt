@@ -29,8 +29,8 @@ class BinanceMarginTradingService @Autowired constructor(
         authenticateService: BinanceAuthenticateService
 ) : AbstractMarginTradingService(staticConfig, dataAdaptor, authenticateService) {
 
-    override fun checkResponse(http: HttpResponse<Buffer>): JsonElement {
-        val e = JsonParser.parseString(http.bodyAsString())
+    override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
+        val e = JsonParser.parseString(resp.bodyAsString())
         if (e.isJsonObject && e.asJsonObject.has("msg")) {
             logger.error(e)
             error(e)
@@ -102,12 +102,12 @@ class BinanceMarginTradingService @Autowired constructor(
             throw NotImplementedError()
         }
         currency ?: error("Currency for getLoanOrders can't be null.")
-        var params = getBody("asset" to string(currency),
-                "startTime" to start?.time.toString(),
-                "endTime" to end?.time.toString(),
-                "size" to size.toString())
-        val loanResp = signedGet(authUrl("/sapi/v1/margin/loan"))
-        val loan = jsonObject(loanResp)
+//        var params = getBody("asset" to string(currency),
+//                "startTime" to start?.time.toString(),
+//                "endTime" to end?.time.toString(),
+//                "size" to size.toString())
+//        val loanResp = signedGet(authUrl("/sapi/v1/margin/loan"))
+//        val loan = jsonObject(loanResp)
         //Binance 的借还账单结构和 huobi、okex 完全不同，Binance 不需要借还账单的对应，
         //只需要借多少还多少就可以了。并且计息也不和借贷账单对应。
         throw NotImplementedError()
@@ -152,9 +152,9 @@ class BinanceMarginTradingService @Autowired constructor(
      */
 
     override suspend fun getMarginInfo(): Map<Symbol, MarginInfo> {
-        val minLoan = jsonArray(signedGet(authUrl("/sapi/v1/margin/allAssets")))
-        val marginInfo = MarginInfo()
-        marginInfo.symbol = CROSS
+//        val minLoan = jsonArray(signedGet(authUrl("/sapi/v1/margin/allAssets")))
+//        val marginInfo = MarginInfo()
+//        marginInfo.symbol = CROSS
         throw NotImplementedError()
 //        return mapOf(CROSS to marginInfo)
     }

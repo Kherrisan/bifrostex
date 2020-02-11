@@ -26,14 +26,14 @@ class TestOkexSpotMarket : TestQueryMarketMethod() {
     @Test
     fun testGetSymbolMetaInfo() = runBlocking {
         val metaInfo = spotMarketService.getSymbolMetaInfo()
-        logger.debug(metaInfo)
+        metaInfo.forEach { logger.info(it) }
         assert(metaInfo.size > 10)
     }
 
     @Test
     fun getAllSymbols() = runBlocking {
         val symbols = spotMarketService.getSymbols()
-        logger.debug(symbols)
+        symbols.forEach { logger.info(it) }
         // 检查是否有足够多的symbols
         assert(symbols.size > 10)
         // 检查是否有重复的basequote字符串
@@ -46,7 +46,7 @@ class TestOkexSpotMarket : TestQueryMarketMethod() {
     @Test
     fun testGetAllCurrencys() = runBlocking {
         val currencyList = spotMarketService.getCurrencies()
-        logger.debug(currencyList)
+        currencyList.forEach { logger.info(it) }
         // 检查是否有足够多的currencys
         assert(currencyList.size > 10) { "currencyList.size > 10" }
         // 检查是否有重复的currency
@@ -95,7 +95,9 @@ class TestOkexSpotMarket : TestQueryMarketMethod() {
     fun getDepthForSth() = runBlocking {
         val depth = spotMarketService.getDepths(BTC_USDT, 20)
         val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
-        logger.debug(depth)
+        logger.info(depth)
+        depth.asks.forEach { logger.info(it) }
+        depth.bids.forEach { logger.info(it) }
         // 检查最高卖价是否高于最低买价
         val minAsk = depth.asks.last()
         val maxBid = depth.bids.first()
@@ -132,7 +134,7 @@ class TestOkexSpotMarket : TestQueryMarketMethod() {
     @Test
     fun getTradesForSth() = runBlocking {
         val trades = spotMarketService.getTrades(BTC_USDT, 15)
-        logger.debug(trades)
+        trades.forEach { logger.info(it) }
         // 检查trade的symbol
         trades.forEach { assert(it.symbol == symbol) }
         val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
@@ -154,7 +156,7 @@ class TestOkexSpotMarket : TestQueryMarketMethod() {
         val size = Random.nextInt(5, 20)
         // 测试一个月之前的数据
         val klines = spotMarketService.getKlines(BTC_USDT, KlinePeriodEnum._1DAY, size, Date(startTime.toInstant().toEpochMilli()))
-        logger.debug(klines)
+        klines.forEach { logger.info(it) }
         val meta = metaInfo.symbolMetaInfo[BTC_USDT]!!
         // 检查kline数量
         assert(klines.size == size || klines.size == size + 1)

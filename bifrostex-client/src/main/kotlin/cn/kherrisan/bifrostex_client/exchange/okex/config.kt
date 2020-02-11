@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component
 @Component
 class OkexMetaInfo : ExchangeMetaInfo()
 
-@ConfigurationProperties(prefix = "bifrostex.exchange.huobi")
+@ConfigurationProperties(prefix = "bifrostex.exchange.okex")
 @Configuration
 class OkexRuntimeConfig : ExchangeRuntimeConfig()
 
