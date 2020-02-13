@@ -5,7 +5,7 @@ import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.SpotTradingService
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.core.service.SpotMarketService
-import cn.kherrisan.bifrostex_client.core.websocket.Subscription
+import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
 import cn.kherrisan.bifrostex_engine.EntityNotFoundException
@@ -18,7 +18,6 @@ import cn.kherrisan.bifrostex_engine.repository.VertxTransactionRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.apache.commons.lang3.time.DateUtils
 import org.apache.logging.log4j.LogManager
 import org.springframework.beans.factory.annotation.Autowired
@@ -157,19 +156,19 @@ abstract class AbstractSpot(
         return spotOrderRepository.get(name, symbol, start, end, state)
     }
 
-    override suspend fun CoroutineScope.subscribeDepth(symbol: Symbol): Subscription<Depth> {
+    override suspend fun CoroutineScope.subscribeDepth(symbol: Symbol): ResolvableSubscription<Depth> {
         return spotMarketService.subscribeDepth(symbol)
     }
 
-    override suspend fun CoroutineScope.subscribeTrade(symbol: Symbol): Subscription<Trade> {
+    override suspend fun CoroutineScope.subscribeTrade(symbol: Symbol): ResolvableSubscription<Trade> {
         return spotMarketService.subscribeTrade(symbol)
     }
 
-    override suspend fun CoroutineScope.subscribeKline(symbol: Symbol): Subscription<Kline> {
+    override suspend fun CoroutineScope.subscribeKline(symbol: Symbol): ResolvableSubscription<Kline> {
         return spotMarketService.subscribeKline(symbol)
     }
 
-    override suspend fun CoroutineScope.subscribeTicker(symbol: Symbol): Subscription<Ticker> {
+    override suspend fun CoroutineScope.subscribeTicker(symbol: Symbol): ResolvableSubscription<Ticker> {
         return spotMarketService.subscribeTicker(symbol)
     }
 

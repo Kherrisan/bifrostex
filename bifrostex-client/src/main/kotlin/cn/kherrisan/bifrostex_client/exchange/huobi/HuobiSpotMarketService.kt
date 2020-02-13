@@ -4,8 +4,7 @@ import cn.kherrisan.bifrostex_client.core.common.iid
 import cn.kherrisan.bifrostex_client.core.common.randomDelay
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
-import cn.kherrisan.bifrostex_client.core.websocket.Subscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
+import cn.kherrisan.bifrostex_client.core.websocket.*
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
 import com.google.gson.Gson
@@ -19,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
@@ -32,6 +32,7 @@ class HuobiSpotMarketService @Autowired constructor(
 ) : AbstractSpotMarketService(staticConfig, dataAdaptor, metaInfo) {
 
     @Autowired
+    @Qualifier("huobiWebsocketDispatcher")
     override lateinit var dispatcher: HuobiWebsocketDispatcher
 
     @Autowired
@@ -176,15 +177,15 @@ class HuobiSpotMarketService @Autowired constructor(
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
-        val subscription = Subscription(channel, dispatcher, resolver)
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, ResolvableSubscription<T>) -> Unit): ResolvableSubscription<T> {
+        val subscription = ResolvableSubscription(channel, dispatcher, resolver)
         subscription.requestPacket = { Gson().toJson(mapOf("req" to channel, "id" to iid())) }
         subscription.subPacket = { Gson().toJson(mapOf("sub" to channel, "id" to iid())) }
         subscription.unsubPacket = { Gson().toJson(mapOf("unsub" to channel, "id" to iid())) }
         return subscription
     }
 
-    private suspend fun doSubscribeDepth(sub: Subscription<Depth>, symbol: Symbol) {
+    private suspend fun doSubscribeDepth(sub: ResolvableSubscription<Depth>, symbol: Symbol) {
         var hasRequestAgain = false
         var disorderCounter = 0
         //先订阅增量数据
@@ -192,7 +193,6 @@ class HuobiSpotMarketService @Autowired constructor(
             val obj = it.asJsonObject
             if (obj.has("rep")) {
                 //是针对req的响应报文，处理全量数据
-                subscription.triggerRequested()
                 logger.debug("Get response from ${subscription.channel}")
                 var depth = depth(symbol, it.asJsonObject["data"].asJsonObject)
                 depth = SequentialDepth(depth, 0L, 0L)
@@ -336,15 +336,12 @@ class HuobiSpotMarketService @Autowired constructor(
         val bboSub = newSubscription<AskBid>(bboChannel) { it, sub ->
             //bbo频道在收到数据后，存入缓存中。
             val tick = it.asJsonObject["tick"].asJsonObject
-            sub.buffer.add(AskBid(price(tick["ask"], symbol), price(tick["bid"], symbol)))
+            sub.deliver(AskBid(price(tick["ask"], symbol), price(tick["bid"], symbol)))
         }
         //订阅ticker数据
         val tickerChannel = "market.${symbol.nameWithoutSlash()}.detail"
         val tickerSub = newSubscription<Ticker>(tickerChannel) { it, sub ->
             val tick = it.asJsonObject["tick"].asJsonObject
-            //从bbo的缓存中取一个最新的ask-bid对，填入到ticker中
-            //bbo缓存很小，只有2
-            val bbo = sub.attachedSubscription[0].buffer.get() as AskBid
             sub.deliver(Ticker(
                     symbol,
                     size(tick["amount"], symbol),
@@ -353,13 +350,24 @@ class HuobiSpotMarketService @Autowired constructor(
                     price(tick["close"], symbol),
                     price(tick["high"], symbol),
                     price(tick["low"], symbol),
-                    bbo.bid,
-                    bbo.ask,
+                    0f.toBigDecimal(),
+                    0f.toBigDecimal(),
                     date(it.asJsonObject["ts"].asString)
             ))
         }
-        tickerSub.attach(bboSub as Subscription<Any>)
-        return tickerSub.subscribe()
+        val sync = SynchronizedSubscription<Ticker>()
+        @Suppress("UNCHECKED_CAST")
+        sync.addChild(bboSub as AbstractSubscription<Any>)
+                .addChild(tickerSub as AbstractSubscription<Any>)
+                .resolve { list, sub ->
+                    //从bbo的缓存中取一个最新的ask-bid对，填入到ticker中
+                    val bbo = list[0] as AskBid
+                    val ticker = list[1] as Ticker
+                    ticker.ask = bbo.ask
+                    ticker.bid = bbo.bid
+                    sub.deliver(ticker)
+                }
+        return sync.subscribe()
     }
 
     /**

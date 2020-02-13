@@ -1,6 +1,7 @@
 package cn.kherrisan.bifrostex_client.exchange.huobi
 
 import cn.kherrisan.bifrostex_client.core.common.GET
+import cn.kherrisan.bifrostex_client.core.common.MyDate
 import cn.kherrisan.bifrostex_client.core.common.POST
 import cn.kherrisan.bifrostex_client.core.common.sortedUrlEncode
 import cn.kherrisan.bifrostex_client.core.enumeration.AccountTypeEnum
@@ -9,13 +10,16 @@ import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderTypeEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotTradingService
-import cn.kherrisan.bifrostex_client.core.websocket.Subscription
+import cn.kherrisan.bifrostex_client.core.websocket.*
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
+import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
+import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import io.vertx.kotlin.coroutines.await
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -35,6 +39,11 @@ class HuobiSpotTradingService @Autowired constructor(
         dataAdaptor: HuobiServiceDataAdaptor,
         val metaInfo: HuobiMetaInfo
 ) : AbstractSpotTradingService(staticConfig, dataAdaptor, HuobiAuthenticateService(staticConfig.spotTradingHttpHost)) {
+
+    @Autowired
+    private lateinit var dispatcher: HuobiSpotTradingWebsocketDispatcher
+
+    private val authenticateService = HuobiAuthenticateService(staticConfig.spotTradingWsHost)
 
     @PostConstruct
     fun initAccountIdMap() {
@@ -313,11 +322,108 @@ class HuobiSpotTradingService @Autowired constructor(
         }
     }
 
-    override suspend fun subscribeBalance(symbol: Symbol): Subscription<SpotBalance> {
-        return super.subscribeBalance()
+    private suspend fun awaitWebsocketAuthentication(dispatcher: WebsocketDispatcher) {
+        if ((dispatcher as HuobiSpotTradingWebsocketDispatcher).isAuth) {
+            return
+        }
+        val promise = Promise.promise<Any>()
+        val op = "auth"
+        val subscription = ResolvableSubscription<Any>(op, dispatcher) { elem, sub ->
+            val obj = elem.asJsonObject
+            if (obj["err-code"].asInt == 0) {
+                //鉴权成功
+                (dispatcher as HuobiSpotTradingWebsocketDispatcher).isAuth = true
+                promise.complete()
+            }
+        }
+        dispatcher.register(op, subscription)
+        val params = mutableMapOf<String, Any>()
+        authenticateService.signWebsocketRequest(GET, "/ws/v1", params)
+        params["op"] = op
+        subscription.requestPacket = {
+            Gson().toJson(params)
+        }
+        subscription.request()
+        promise.future().await()
+    }
+
+    /**
+     * 订阅账户余额增量数据
+     *
+     * 为了同时获得可用余额和冻结余额，需要订阅两个频道。
+     *
+     * @param symbol Symbol? 没用
+     * @return Subscription<SpotBalance>
+     */
+    override suspend fun subscribeBalance(symbol: Symbol?): Subscription<SpotBalance> {
+        awaitWebsocketAuthentication(dispatcher)
+        val ch = "accounts"
+        val subParams = mutableMapOf(
+                "op" to "sub",
+                "topic" to ch,
+                "model" to "1"
+        )
+        val unsubParams = mapOf(
+                "op" to "unsub",
+                "topic" to ch
+        )
+        val totalSubscription = dispatcher.newSubscription<SpotBalance>(ch) { elem, sub ->
+            val obj = elem.asJsonObject
+            val time = MyDate(obj["ts"].asLong)
+            obj["data"].asJsonObject["list"].asJsonArray.map { it.asJsonObject }
+                    .filter { it["account-id"].asInt == metaInfo.accountIdMap[AccountTypeEnum.SPOT]!!.toInt() }
+                    .filter { it["type"].asString == "trade" }
+                    .forEach { sb ->
+                        val c = currency(sb["currency"])
+                        val totalBalance = SpotBalance(
+                                c,
+                                size(sb["balance"], c),
+                                0f.toBigDecimal(),
+                                time
+                        )
+                        logger.debug(totalBalance)
+                        sub.deliver(totalBalance)
+                    }
+        }
+        totalSubscription.subPacket = { Gson().toJson(subParams) }
+        totalSubscription.unsubPacket = { Gson().toJson(unsubParams) }
+        val newDispatcher = dispatcher.newDispatcher()
+        awaitWebsocketAuthentication(newDispatcher)
+        val freeSubscription = newDispatcher.newSubscription<SpotBalance>(ch) { elem, sub ->
+            val obj = elem.asJsonObject
+            val time = MyDate(obj["ts"].asLong)
+            obj["data"].asJsonObject["list"].asJsonArray.map { it.asJsonObject }
+                    .filter { it["account-id"].asInt == metaInfo.accountIdMap[AccountTypeEnum.SPOT]!!.toInt() }
+                    .filter { it["type"].asString == "trade" }
+                    .forEach {
+                        val freeBalance = SpotBalance(
+                                currency(it["currency"]),
+                                size(it["balance"], currency(it["currency"])),
+                                0f.toBigDecimal(),
+                                time
+                        )
+                        logger.debug(freeBalance)
+                        sub.deliver(freeBalance)
+                    }
+        }
+        subParams["model"] = "0"
+        freeSubscription.subPacket = { Gson().toJson(subParams) }
+        freeSubscription.unsubPacket = { Gson().toJson(unsubParams) }
+        val sync = SynchronizedSubscription<SpotBalance>()
+        @Suppress("UNCHECKED_CAST")
+        sync.addChild(freeSubscription as AbstractSubscription<Any>)
+                .addChild(totalSubscription as AbstractSubscription<Any>)
+                .resolve { list, abstractSubscription ->
+                    val freeBalance = list[0] as SpotBalance
+                    val totalBalance = list[1] as SpotBalance
+                    freeBalance.frozen = size(totalBalance.free - freeBalance.free, freeBalance.currency)
+                    abstractSubscription.deliver(freeBalance)
+                }
+        return sync.subscribe()
     }
 
     override suspend fun subscribeOrder(symbol: Symbol): Subscription<SpotOrder> {
-        return super.subscribeOrder()
+        awaitWebsocketAuthentication(dispatcher)
+        throw NotImplementedError()
     }
 }

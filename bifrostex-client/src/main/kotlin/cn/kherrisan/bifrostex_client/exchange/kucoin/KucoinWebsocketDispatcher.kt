@@ -2,6 +2,7 @@ package cn.kherrisan.bifrostex_client.exchange.kucoin
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.iid
+import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.Gson
 import com.google.gson.JsonParser
@@ -46,7 +47,7 @@ class KucoinWebsocketDispatcher @Autowired constructor(runtimeConfig: KucoinRunt
             }
             "message" -> {
                 val ch = obj["topic"].asString
-                val sub = subMap[ch]!!
+                val sub = subMap[ch]!! as ResolvableSubscription
                 sub.resolver(this, obj, sub)
             }
         }

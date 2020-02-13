@@ -19,4 +19,6 @@ interface AuthenticationService {
      * @param headers MutableMap<String, String>?
      */
     fun signedHttpRequest(method: String, path: String, params: MutableMap<String, Any>, headers: MutableMap<String, String>)
+
+    fun signWebsocketRequest(method: String, path: String, params: MutableMap<String, Any>)
 }

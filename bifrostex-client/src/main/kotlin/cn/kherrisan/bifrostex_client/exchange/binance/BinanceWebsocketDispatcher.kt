@@ -1,7 +1,7 @@
 package cn.kherrisan.bifrostex_client.exchange.binance
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.websocket.Subscription
+import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
@@ -78,7 +78,7 @@ open class BinanceWebsocketDispatcher @Autowired constructor(
                     e = "${e}_${obj["k"].asJsonObject["i"].asString}"
                 }
                 val ch = "$s@$e".toLowerCase()
-                val sub = subMap[ch] as Subscription
+                val sub = subMap[ch] as ResolvableSubscription
                 sub.resolver(this, obj, sub)
             } catch (exception: Exception) {
                 logger.error(exception)

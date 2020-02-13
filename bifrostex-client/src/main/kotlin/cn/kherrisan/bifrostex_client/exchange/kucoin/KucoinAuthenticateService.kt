@@ -20,4 +20,8 @@ class KucoinAuthenticateService(val host: String) : AuthenticationService {
         val sha = hmacSHA256Signature(payload, rt.secretKey!!)
         headers["KC-API-SIGN"] = Base64.encodeBase64String(sha)
     }
+
+    override fun signWebsocketRequest(method: String, path: String, params: MutableMap<String, Any>) {
+        throw NotImplementedError()
+    }
 }

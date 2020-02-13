@@ -5,8 +5,7 @@ import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
-import cn.kherrisan.bifrostex_client.core.websocket.Subscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
+import cn.kherrisan.bifrostex_client.core.websocket.*
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
 import com.google.gson.Gson
@@ -189,8 +188,8 @@ class KucoinSpotMarketService @Autowired constructor(
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
-        val sub = Subscription<T>(channel, dispatcher, resolver)
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, ResolvableSubscription<T>) -> Unit): ResolvableSubscription<T> {
+        val sub = ResolvableSubscription<T>(channel, dispatcher, resolver)
         sub.subPacket = {
             val id = iid().toInt()
             (dispatcher as KucoinWebsocketDispatcher).idMap[id] = channel
@@ -337,22 +336,29 @@ class KucoinSpotMarketService @Autowired constructor(
                     0f.toBigDecimal(),
                     0f.toBigDecimal(),
                     date(data["datetime"]))
-            val ab = sub.attachedSubscription[0].buffer.get() as AskBid
-            ticker.ask = ab.ask
-            ticker.bid = ab.bid
             ticker.open = ticker.close - bigDecimal(data["changePrice"])
+            logger.debug(ticker)
             sub.deliver(ticker)
         }
         val bboChannel = "/market/ticker:${string(symbol)}"
         val bboSub = newSubscription<AskBid>(bboChannel) { it, sub ->
             val data = it.asJsonObject["data"].asJsonObject
             val ab = AskBid(bigDecimal(data["bestAsk"]), bigDecimal(data["bestBid"]))
-            sub.buffer.add(ab)
             logger.debug(ab)
+            sub.deliver(ab)
         }
+        val sync = SynchronizedSubscription<Ticker>()
         @Suppress("UNCHECKED_CAST")
-        tickerSub.attach(bboSub as Subscription<Any>)
-        return tickerSub.subscribe()
+        sync.addChild(bboSub as AbstractSubscription<Any>)
+                .addChild(tickerSub as AbstractSubscription<Any>)
+                .resolve { list, sub ->
+                    val ab = list[0] as AskBid
+                    val ticker = list[1] as Ticker
+                    ticker.ask = ab.ask
+                    ticker.bid = ab.bid
+                    sub.deliver(ticker)
+                }
+        return sync.subscribe()
     }
 
     /**

@@ -30,7 +30,7 @@ abstract class AbstractSpotTradingService(
 
     val logger = LogManager.getLogger()
 
-    override suspend fun subscribeBalance(symbol: Symbol): Subscription<SpotBalance> {
+    override suspend fun subscribeBalance(symbol: Symbol?): Subscription<SpotBalance> {
         throw NotImplementedError()
     }
 

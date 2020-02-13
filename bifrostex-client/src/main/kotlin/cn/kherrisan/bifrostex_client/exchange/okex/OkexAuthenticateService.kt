@@ -23,4 +23,8 @@ class OkexAuthenticateService(val host: String) : AuthenticationService {
         headers["OK-ACCESS-TIMESTAMP"] = ts.toString()
         headers["OK-ACCESS-PASSPHRASE"] = password!!
     }
+
+    override fun signWebsocketRequest(method: String, path: String, params: MutableMap<String, Any>) {
+        throw NotImplementedError()
+    }
 }

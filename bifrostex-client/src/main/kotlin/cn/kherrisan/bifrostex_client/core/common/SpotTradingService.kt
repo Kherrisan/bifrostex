@@ -24,7 +24,7 @@ interface SpotTradingService : SpotMarginTradingService {
      * @param symbol Symbol
      * @return Subscription<SpotBalance>
      */
-    suspend fun subscribeBalance(symbol: Symbol): Subscription<SpotBalance>
+    suspend fun subscribeBalance(symbol: Symbol?): Subscription<SpotBalance>
 
     /**
      * 订阅账户订单增量数据

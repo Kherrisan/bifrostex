@@ -5,7 +5,7 @@ import cn.kherrisan.bifrostex_client.core.common.*
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpService
 import cn.kherrisan.bifrostex_client.core.http.VertxHttpService
-import cn.kherrisan.bifrostex_client.core.websocket.Subscription
+import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.CurrencyMetaInfo
 import com.google.gson.JsonArray
@@ -107,9 +107,9 @@ abstract class AbstractSpotMarketService(val staticConfig: ExchangeStaticConfigu
         return JsonParser.parseString(t)
     }
 
-    open fun <T : Any> newSubscription(channel: String, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
+    open fun <T : Any> newSubscription(channel: String, resolver: suspend CoroutineScope.(JsonElement, ResolvableSubscription<T>) -> Unit): ResolvableSubscription<T> {
         return newSubscription(channel, dispatcher, resolver)
     }
 
-    abstract fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T>
+    abstract fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, ResolvableSubscription<T>) -> Unit): ResolvableSubscription<T>
 }

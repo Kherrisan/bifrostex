@@ -3,6 +3,7 @@ package cn.kherrisan.bifrostex_client.exchange.poloniex
 import cn.kherrisan.bifrostex_client.core.common.MyDate
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
+import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
@@ -27,7 +28,7 @@ class PoloniexSpotMarketService @Autowired constructor(
         dataAdaptor: PoloniexServiceDataAdaptor,
         metaInfo: PoloniexMetaInfo
 ) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, Subscription<T>) -> Unit): Subscription<T> {
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, ResolvableSubscription<T>) -> Unit): ResolvableSubscription<T> {
         throw NotImplementedError()
     }
 

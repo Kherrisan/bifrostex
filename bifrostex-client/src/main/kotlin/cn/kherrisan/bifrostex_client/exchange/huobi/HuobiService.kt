@@ -18,7 +18,6 @@ class HuobiService : ExchangeService() {
     override lateinit var runtimeConfig: HuobiRuntimeConfig
 
     @Autowired
-    @Lazy
     override lateinit var spotMarketService: HuobiSpotMarketService
 
     @Autowired

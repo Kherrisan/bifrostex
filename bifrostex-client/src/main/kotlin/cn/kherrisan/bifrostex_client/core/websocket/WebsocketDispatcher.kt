@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 
 abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
 
@@ -30,14 +31,34 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
     abstract val name: ExchangeName
 
     protected val logger: Logger = LogManager.getLogger()
-    protected val subMap: MutableMap<String, Subscription<Any>> = ConcurrentHashMap()
+    protected val subMap: MutableMap<String, AbstractSubscription<Any>> = ConcurrentHashMap()
     private lateinit var ws: WebSocket
-    var state: EndpointStateEnum = EndpointStateEnum.INIT
-    var dispatcherLoop: Job? = null
+    private var state: AtomicReference<EndpointStateEnum> = AtomicReference(EndpointStateEnum.CLOSED)
+    private var eventLoop: Job? = null
+    val childDispatcher: MutableList<WebsocketDispatcher> = mutableListOf()
+    private val receiveChannel: Channel<Buffer> = Channel(1024)
+    private val sendChannel: Channel<String> = Channel(1024)
+
+    init {
+        logger.debug("Start running dispatcher loop ${objSimpName(this)}")
+        eventLoop = GlobalScope.launch(vertx.dispatcher()) {
+            while (true) {
+                try {
+                    handleChannelEvents()
+                    delay(20)
+                } catch (e: CancellationException) {
+                    sendChannel.close(e)
+                    receiveChannel.close(e)
+                    logger.debug("Websocket channel is closed.")
+                    return@launch
+                }
+            }
+        }
+    }
 
     fun triggerSubscribedEvent(ch: String) {
         logger.debug("Trigger subscribed to $ch")
-        subMap[ch]!!.triggerSubscribed()
+        subMap[ch]!!.triggerSubscribedEvent()
     }
 
     /**
@@ -55,12 +76,17 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
         }
     }
 
-    fun register(ch: String, subscription: Subscription<Any>) {
+    suspend fun triggerRequestedEvent(ch: String) {
+        logger.debug("Trigger requested to $ch")
+        subMap[ch]!!.triggerRequestedEvent()
+    }
+
+    fun register(ch: String, subscription: AbstractSubscription<Any>) {
         logger.debug("Register $ch")
         subMap[ch] = subscription
     }
 
-    fun unregister(ch: String): Subscription<Any> {
+    fun unregister(ch: String): AbstractSubscription<Any> {
         logger.debug("Unregister $ch")
         return subMap.remove(ch)!!
     }
@@ -108,7 +134,7 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
         if (uri.scheme == "wss" && uri.port == -1) {
             port = 443
         }
-        state = EndpointStateEnum.CONNECTING
+        state = AtomicReference(EndpointStateEnum.CONNECTING)
         val rp = if (uri.query == null) {
             uri.path
         } else {
@@ -116,21 +142,23 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
         }
         ws = awaitResult { vertx.createHttpClient(hco).webSocket(port, uri.host, rp, it) }
         logger.debug("Connected to $host")
-        val channel = Channel<Buffer>(Channel.UNLIMITED)
-        ws.handler {
-            channel.offer(it)
+        ws.handler { receiveChannel.offer(it) }
+        state = AtomicReference(EndpointStateEnum.CONNECTED)
+    }
+
+    private suspend fun CoroutineScope.handleChannelEvents() {
+        while (!receiveChannel.isEmpty) {
+            val buffer = receiveChannel.receive()
+            dispatch(buffer.bytes)
         }
-        state = EndpointStateEnum.CONNECTED
-        GlobalScope.launch(vertx.dispatcher()) {
-            while (true) {
-                try {
-                    val buffer = channel.receive()
-                    dispatch(buffer.bytes)
-                } catch (e: CancellationException) {
-                    channel.close()
-                    logger.debug("Websocket channel is closed.")
-                }
+        while (!sendChannel.isEmpty) {
+            if (state.get() == EndpointStateEnum.INIT || state.get() == EndpointStateEnum.CLOSED) {
+                connect()
             }
+            while (state.get() == EndpointStateEnum.CONNECTING || state.get() == EndpointStateEnum.CLOSING) delay(100)
+            val text = sendChannel.receive()
+            ws.writeTextMessage(text)
+            logger.debug("Websocket has sent $text")
         }
     }
 
@@ -141,11 +169,11 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
      */
     open suspend fun close() {
         logger.debug("Start to close the ${objSimpName(this)}.")
-        state = EndpointStateEnum.CLOSING
-        dispatcherLoop?.cancel(CancellationException("Active cancel this WebsocketDispatcher."))
+        state = AtomicReference(EndpointStateEnum.CLOSING)
+        eventLoop?.cancel(CancellationException("Active cancel this WebsocketDispatcher."))
         awaitResult<Void> { ws.close(it) }
         logger.debug("${objSimpName(this)} closed.")
-        state = EndpointStateEnum.CLOSED
+        state = AtomicReference(EndpointStateEnum.CLOSED)
         subMap.clear()
     }
 
@@ -170,12 +198,7 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
      * @param text String
      */
     suspend fun send(text: String) {
-        if (state == EndpointStateEnum.INIT || state == EndpointStateEnum.CLOSED) {
-            connect()
-        }
-        while (state == EndpointStateEnum.CONNECTING || state == EndpointStateEnum.CLOSING) delay(100)
-        ws.writeTextMessage(text)
-        logger.debug("Websocket has sent $text")
+        sendChannel.send(text)
     }
 
     open suspend fun handlePing(bytes: ByteArray): Boolean {
@@ -183,5 +206,16 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
     }
 
     open suspend fun handleCommandResponse(elem: JsonElement) {
+    }
+
+    open fun <T : Any> newSubscription(ch: String, resolver: suspend CoroutineScope.(JsonElement, ResolvableSubscription<T>) -> Unit): ResolvableSubscription<T> {
+        val sub = ResolvableSubscription<T>(ch, this, resolver)
+        @Suppress("UNCHECKED_CAST")
+        register(ch, sub as ResolvableSubscription<Any>)
+        return sub
+    }
+
+    open fun newDispatcher(): WebsocketDispatcher {
+        throw NotImplementedError()
     }
 }
