@@ -31,7 +31,8 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
     abstract val name: ExchangeName
 
     protected val logger: Logger = LogManager.getLogger()
-    protected val subMap: MutableMap<String, AbstractSubscription<Any>> = ConcurrentHashMap()
+    protected var defaultSubscriptionMap: MutableMap<String, AbstractSubscription<Any>> = ConcurrentHashMap()
+    protected var synchronizeSubscriptionList: MutableList<SynchronizedSubscription<Any>> = mutableListOf()
     private lateinit var ws: WebSocket
     private var state: AtomicReference<EndpointStateEnum> = AtomicReference(EndpointStateEnum.CLOSED)
     private var eventLoop: Job? = null
@@ -40,6 +41,10 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
     private val sendChannel: Channel<String> = Channel(1024)
 
     init {
+        launchEventLoop()
+    }
+
+    protected fun launchEventLoop() {
         logger.debug("Start running dispatcher loop ${objSimpName(this)}")
         eventLoop = GlobalScope.launch(vertx.dispatcher()) {
             while (true) {
@@ -58,7 +63,7 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
 
     fun triggerSubscribedEvent(ch: String) {
         logger.debug("Trigger subscribed to $ch")
-        subMap[ch]!!.triggerSubscribedEvent()
+        defaultSubscriptionMap[ch]!!.triggerSubscribedEvent()
     }
 
     /**
@@ -71,24 +76,28 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
         val sub = unregister(ch)
         logger.debug("Trigger unsubscribed to $ch")
         sub.triggerUnsubscribedEvent()
-        if (subMap.isEmpty()) {
+        if (defaultSubscriptionMap.isEmpty()) {
+            for (sync in synchronizeSubscriptionList) {
+                sync.close()
+            }
+            synchronizeSubscriptionList.clear()
             close()
         }
     }
 
     suspend fun triggerRequestedEvent(ch: String) {
         logger.debug("Trigger requested to $ch")
-        subMap[ch]!!.triggerRequestedEvent()
+        defaultSubscriptionMap[ch]!!.triggerRequestedEvent()
     }
 
     fun register(ch: String, subscription: AbstractSubscription<Any>) {
         logger.debug("Register $ch")
-        subMap[ch] = subscription
+        defaultSubscriptionMap[ch] = subscription
     }
 
     fun unregister(ch: String): AbstractSubscription<Any> {
         logger.debug("Unregister $ch")
-        return subMap.remove(ch)!!
+        return defaultSubscriptionMap.remove(ch)!!
     }
 
     private fun buildHttpClientOptions(): HttpClientOptions {
@@ -103,17 +112,18 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
         return options
     }
 
-    suspend fun resubscribeAll() {
-        subMap.values.forEach { it.unsubscribe() }
-        subMap.values.forEach { it.subscribe() }
-    }
-
+    /**
+     * 用于突发的断线重连，服务器宕机等情况发生时，进行重启，并重新订阅所有的内容。
+     */
     suspend fun restart() {
-        val subMapCopy = HashMap(subMap)
+        val subMapCopy = HashMap(defaultSubscriptionMap)
+        val syncListCopy = ArrayList(synchronizeSubscriptionList)
         logger.debug("Restarting...")
         reconnect()
         logger.debug("Start to subscribe ${subMapCopy.values.joinToString(", ")}")
+        syncListCopy.forEach { it.subscribe() }
         subMapCopy.values.forEach { it.subscribe() }
+        defaultSubscriptionMap = ConcurrentHashMap(subMapCopy)
     }
 
     suspend fun reconnect() {
@@ -121,6 +131,7 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
         logger.debug("Waiting 2s for connecting.")
         delay(2000)
         connect()
+        launchEventLoop()
     }
 
     suspend fun connect() {
@@ -174,7 +185,7 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
         awaitResult<Void> { ws.close(it) }
         logger.debug("${objSimpName(this)} closed.")
         state = AtomicReference(EndpointStateEnum.CLOSED)
-        subMap.clear()
+        defaultSubscriptionMap.clear()
     }
 
     abstract suspend fun CoroutineScope.dispatch(bytes: ByteArray)
@@ -208,10 +219,17 @@ abstract class WebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig) {
     open suspend fun handleCommandResponse(elem: JsonElement) {
     }
 
-    open fun <T : Any> newSubscription(ch: String, resolver: suspend CoroutineScope.(JsonElement, ResolvableSubscription<T>) -> Unit): ResolvableSubscription<T> {
-        val sub = ResolvableSubscription<T>(ch, this, resolver)
+    open fun <T : Any> newSubscription(ch: String, resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
+        val sub = DefaultSubscription<T>(ch, this, resolver)
         @Suppress("UNCHECKED_CAST")
-        register(ch, sub as ResolvableSubscription<Any>)
+        register(ch, sub as AbstractSubscription<Any>)
+        return sub
+    }
+
+    open fun <T : Any> newSynchronizeSubscription(resolver: (List<Any>, AbstractSubscription<T>) -> Unit): SynchronizedSubscription<T> {
+        val sub = SynchronizedSubscription<T>(resolver)
+        @Suppress("UNCHECKED_CAST")
+        synchronizeSubscriptionList.add(sub as SynchronizedSubscription<Any>)
         return sub
     }
 

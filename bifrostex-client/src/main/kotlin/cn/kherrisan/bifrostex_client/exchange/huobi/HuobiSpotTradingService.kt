@@ -10,7 +10,9 @@ import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderTypeEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotTradingService
-import cn.kherrisan.bifrostex_client.core.websocket.*
+import cn.kherrisan.bifrostex_client.core.websocket.AbstractSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.Subscription
+import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
 import com.google.gson.Gson
@@ -19,7 +21,6 @@ import com.google.gson.JsonParser
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
-import io.vertx.kotlin.coroutines.await
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -328,15 +329,13 @@ class HuobiSpotTradingService @Autowired constructor(
         }
         val promise = Promise.promise<Any>()
         val op = "auth"
-        val subscription = ResolvableSubscription<Any>(op, dispatcher) { elem, sub ->
+        val subscription = dispatcher.newSubscription<Any>(op) { elem, _ ->
             val obj = elem.asJsonObject
             if (obj["err-code"].asInt == 0) {
                 //鉴权成功
-                (dispatcher as HuobiSpotTradingWebsocketDispatcher).isAuth = true
-                promise.complete()
+                dispatcher.isAuth = true
             }
         }
-        dispatcher.register(op, subscription)
         val params = mutableMapOf<String, Any>()
         authenticateService.signWebsocketRequest(GET, "/ws/v1", params)
         params["op"] = op
@@ -344,13 +343,13 @@ class HuobiSpotTradingService @Autowired constructor(
             Gson().toJson(params)
         }
         subscription.request()
-        promise.future().await()
     }
 
     /**
      * 订阅账户余额增量数据
      *
      * 为了同时获得可用余额和冻结余额，需要订阅两个频道。
+     * 但根据实操发现，仅仅是现货交易是不会出现 frozen 的。
      *
      * @param symbol Symbol? 没用
      * @return Subscription<SpotBalance>
@@ -409,17 +408,15 @@ class HuobiSpotTradingService @Autowired constructor(
         subParams["model"] = "0"
         freeSubscription.subPacket = { Gson().toJson(subParams) }
         freeSubscription.unsubPacket = { Gson().toJson(unsubParams) }
-        val sync = SynchronizedSubscription<SpotBalance>()
         @Suppress("UNCHECKED_CAST")
-        sync.addChild(freeSubscription as AbstractSubscription<Any>)
+        return dispatcher.newSynchronizeSubscription<SpotBalance> { list, abstractSubscription ->
+            val freeBalance = list[0] as SpotBalance
+            val totalBalance = list[1] as SpotBalance
+            freeBalance.frozen = size(totalBalance.free - freeBalance.free, freeBalance.currency)
+            abstractSubscription.deliver(freeBalance)
+        }.addChild(freeSubscription as AbstractSubscription<Any>)
                 .addChild(totalSubscription as AbstractSubscription<Any>)
-                .resolve { list, abstractSubscription ->
-                    val freeBalance = list[0] as SpotBalance
-                    val totalBalance = list[1] as SpotBalance
-                    freeBalance.frozen = size(totalBalance.free - freeBalance.free, freeBalance.currency)
-                    abstractSubscription.deliver(freeBalance)
-                }
-        return sync.subscribe()
+                .subscribe()
     }
 
     override suspend fun subscribeOrder(symbol: Symbol): Subscription<SpotOrder> {

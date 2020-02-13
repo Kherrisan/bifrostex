@@ -2,7 +2,7 @@ package cn.kherrisan.bifrostex_client.exchange.okex
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.d64ungzip
-import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.JsonParser
 import io.vertx.kotlin.coroutines.dispatcher
@@ -60,7 +60,7 @@ class OkexWebsocketDispatcher(
                     .map { "$table:$it" }
                     .forEach {
                         // deliver the data
-                        val sub = subMap[it] as ResolvableSubscription
+                        val sub = defaultSubscriptionMap[it] as DefaultSubscription
                         sub.resolver(this, obj, sub)
                     }
         }

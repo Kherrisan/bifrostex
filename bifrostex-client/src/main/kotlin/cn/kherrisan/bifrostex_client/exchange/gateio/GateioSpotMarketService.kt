@@ -4,7 +4,7 @@ import cn.kherrisan.bifrostex_client.core.common.MyDate
 import cn.kherrisan.bifrostex_client.core.common.iid
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
-import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
@@ -134,7 +134,7 @@ class GateioSpotMarketService @Autowired constructor(
      * @param resolver Function2<JsonElement, Subscription<T>, T>
      * @return Subscription<T>
      */
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, ResolvableSubscription<T>) -> Unit): ResolvableSubscription<T> {
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
         val comm = channel.indexOf(":")
         // 这里的channel并不是真正的channel
         val method = channel.substring(0, comm)
@@ -142,7 +142,7 @@ class GateioSpotMarketService @Autowired constructor(
         val args = JsonParser.parseString(params).asJsonArray
         // 真正的channel——ticker:$symbol
         val ch = "$method:${args[0].asString}"
-        val subscription = ResolvableSubscription(ch, dispatcher, resolver)
+        val subscription = DefaultSubscription(ch, dispatcher, resolver)
         subscription.subPacket = {
             val id = iid().toInt()
             (dispatcher as GateioWebsocketDispatcher).idMap[id] = ch

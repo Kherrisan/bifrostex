@@ -1,7 +1,7 @@
 package cn.kherrisan.bifrostex_engine.service
 
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
-import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
 import cn.kherrisan.bifrostex_engine.ExchangeSpotBalance
@@ -26,7 +26,7 @@ interface Spot {
      * @param symbol Symbol
      * @return Subscription<Depth>
      */
-    suspend fun CoroutineScope.subscribeDepth(symbol: Symbol): ResolvableSubscription<Depth>
+    suspend fun CoroutineScope.subscribeDepth(symbol: Symbol): DefaultSubscription<Depth>
 
     /**
      * 订阅公共交易数据
@@ -35,7 +35,7 @@ interface Spot {
      * @param symbol Symbol
      * @return Subscription<Trade>
      */
-    suspend fun CoroutineScope.subscribeTrade(symbol: Symbol): ResolvableSubscription<Trade>
+    suspend fun CoroutineScope.subscribeTrade(symbol: Symbol): DefaultSubscription<Trade>
 
     /**
      * 订阅 K线数据
@@ -44,7 +44,7 @@ interface Spot {
      * @param symbol Symbol
      * @return Subscription<Kline>
      */
-    suspend fun CoroutineScope.subscribeKline(symbol: Symbol): ResolvableSubscription<Kline>
+    suspend fun CoroutineScope.subscribeKline(symbol: Symbol): DefaultSubscription<Kline>
 
     /**
      * 订阅聚合数据
@@ -53,7 +53,7 @@ interface Spot {
      * @param symbol Symbol
      * @return Subscription<Ticker>
      */
-    suspend fun CoroutineScope.subscribeTicker(symbol: Symbol): ResolvableSubscription<Ticker>
+    suspend fun CoroutineScope.subscribeTicker(symbol: Symbol): DefaultSubscription<Ticker>
 
     /**
      *

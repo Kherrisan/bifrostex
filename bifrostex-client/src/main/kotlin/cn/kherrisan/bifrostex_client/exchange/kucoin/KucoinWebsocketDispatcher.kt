@@ -2,7 +2,7 @@ package cn.kherrisan.bifrostex_client.exchange.kucoin
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.iid
-import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.Gson
 import com.google.gson.JsonParser
@@ -38,7 +38,7 @@ class KucoinWebsocketDispatcher @Autowired constructor(runtimeConfig: KucoinRunt
             "pong" -> resetPingTimer()
             "ack" -> {
                 val ch = idMap[obj["id"].asString.toInt()]!!
-                if (subMap[ch]!!.isSubscribed) {
+                if (defaultSubscriptionMap[ch]!!.isSubscribed) {
                     triggerUnsubscribedEvent(ch)
                 } else {
                     triggerSubscribedEvent(ch)
@@ -47,7 +47,7 @@ class KucoinWebsocketDispatcher @Autowired constructor(runtimeConfig: KucoinRunt
             }
             "message" -> {
                 val ch = obj["topic"].asString
-                val sub = subMap[ch]!! as ResolvableSubscription
+                val sub = defaultSubscriptionMap[ch]!! as DefaultSubscription
                 sub.resolver(this, obj, sub)
             }
         }

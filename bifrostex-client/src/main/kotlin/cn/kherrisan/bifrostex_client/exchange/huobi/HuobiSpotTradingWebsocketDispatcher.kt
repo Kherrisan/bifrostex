@@ -1,7 +1,7 @@
 package cn.kherrisan.bifrostex_client.exchange.huobi
 
 import cn.kherrisan.bifrostex_client.core.common.ungzip
-import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.Gson
 import com.google.gson.JsonParser
@@ -42,9 +42,10 @@ class HuobiSpotTradingWebsocketDispatcher @Autowired constructor(
                 logger.debug(obj)
                 val ch = obj["op"].asString
                 //ch:"auth"
-                val sub = subMap[ch] as ResolvableSubscription
+                val sub = defaultSubscriptionMap[ch] as DefaultSubscription
                 sub.resolver(this, obj, sub)
                 triggerRequestedEvent(ch)
+                unregister(ch)
             }
             "sub" -> {
                 //订阅的响应
@@ -57,7 +58,7 @@ class HuobiSpotTradingWebsocketDispatcher @Autowired constructor(
             "notify" -> {
                 //推送的数据
                 val ch = obj["topic"].asString
-                val sub = subMap[ch] as ResolvableSubscription
+                val sub = defaultSubscriptionMap[ch] as DefaultSubscription
                 sub.resolver(this, obj, sub)
             }
         }

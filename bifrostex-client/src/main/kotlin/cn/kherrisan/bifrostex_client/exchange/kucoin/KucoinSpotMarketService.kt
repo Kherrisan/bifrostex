@@ -5,7 +5,10 @@ import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
-import cn.kherrisan.bifrostex_client.core.websocket.*
+import cn.kherrisan.bifrostex_client.core.websocket.AbstractSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.Subscription
+import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
 import com.google.gson.Gson
@@ -188,8 +191,8 @@ class KucoinSpotMarketService @Autowired constructor(
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, ResolvableSubscription<T>) -> Unit): ResolvableSubscription<T> {
-        val sub = ResolvableSubscription<T>(channel, dispatcher, resolver)
+    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
+        val sub = DefaultSubscription<T>(channel, dispatcher, resolver)
         sub.subPacket = {
             val id = iid().toInt()
             (dispatcher as KucoinWebsocketDispatcher).idMap[id] = channel
@@ -347,18 +350,16 @@ class KucoinSpotMarketService @Autowired constructor(
             logger.debug(ab)
             sub.deliver(ab)
         }
-        val sync = SynchronizedSubscription<Ticker>()
         @Suppress("UNCHECKED_CAST")
-        sync.addChild(bboSub as AbstractSubscription<Any>)
+        return dispatcher.newSynchronizeSubscription<Ticker> { list, sub ->
+            val ab = list[0] as AskBid
+            val ticker = list[1] as Ticker
+            ticker.ask = ab.ask
+            ticker.bid = ab.bid
+            sub.deliver(ticker)
+        }.addChild(bboSub as AbstractSubscription<Any>)
                 .addChild(tickerSub as AbstractSubscription<Any>)
-                .resolve { list, sub ->
-                    val ab = list[0] as AskBid
-                    val ticker = list[1] as Ticker
-                    ticker.ask = ab.ask
-                    ticker.bid = ab.bid
-                    sub.deliver(ticker)
-                }
-        return sync.subscribe()
+                .subscribe()
     }
 
     /**

@@ -1,7 +1,7 @@
 package cn.kherrisan.bifrostex_client.exchange.gateio
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.exchange.binance.OKEX_EMPTY_TRADE
 import com.google.gson.JsonElement
@@ -27,7 +27,7 @@ open class GateioWebsocketDispatcher @Autowired constructor(
         val obj = elem.asJsonObject
         val ch = idMap[obj["id"].asInt]!!
         idMap.remove(obj["id"].asInt)
-        if (!subMap[ch]!!.isSubscribed) {
+        if (!defaultSubscriptionMap[ch]!!.isSubscribed) {
             triggerSubscribedEvent(ch)
         } else {
             triggerUnsubscribedEvent(ch)
@@ -55,7 +55,7 @@ open class GateioWebsocketDispatcher @Autowired constructor(
                 }
             }
             val ch = "$m:$sym"
-            val sub = subMap[ch] as ResolvableSubscription
+            val sub = defaultSubscriptionMap[ch] as DefaultSubscription
             sub.resolver(this, obj, sub)
         }
     }

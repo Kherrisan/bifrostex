@@ -2,7 +2,7 @@ package cn.kherrisan.bifrostex_client.exchange.huobi
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.ungzip
-import cn.kherrisan.bifrostex_client.core.websocket.ResolvableSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import com.google.gson.Gson
 import com.google.gson.JsonParser
@@ -38,7 +38,7 @@ class HuobiWebsocketDispatcher @Autowired constructor(
             }
             obj.has("rep") -> {
                 val ch = obj["rep"].asString
-                val sub = subMap[ch] as ResolvableSubscription
+                val sub = defaultSubscriptionMap[ch] as DefaultSubscription
                 triggerRequestedEvent(ch)
                 sub.resolver(this, obj, sub)
             }
@@ -46,7 +46,7 @@ class HuobiWebsocketDispatcher @Autowired constructor(
                 // dispatch the data
                 try {
                     val ch = obj["ch"].asString
-                    val sub = subMap[ch] as ResolvableSubscription
+                    val sub = defaultSubscriptionMap[ch] as DefaultSubscription
                     sub.resolver(this, obj, sub)
                 } catch (e: Exception) {
                     logger.error(e.message)
