@@ -3,17 +3,13 @@ package cn.kherrisan.bifrostex_client.exchange.okex
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
-import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
-import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
-import kotlinx.coroutines.CoroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.*
@@ -26,7 +22,7 @@ class OkexSpotMarketService @Autowired constructor(
 ) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
 
     @Autowired
-    override lateinit var dispatcher: OkexWebsocketDispatcher
+    override lateinit var dispatcher: OkexSpotMarketWebsocketDispatcher
 
     override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
         val obj = JsonParser.parseString(resp.bodyAsString())
@@ -164,13 +160,6 @@ class OkexSpotMarketService @Autowired constructor(
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
-        val subscription = DefaultSubscription<T>(channel, dispatcher, resolver)
-        subscription.subPacket = { Gson().toJson(mapOf("op" to "subscribe", "args" to listOf(channel))) }
-        subscription.unsubPacket = { Gson().toJson(mapOf("op" to "unsubscribe", "args" to listOf(channel))) }
-        return subscription
-    }
-
     /**
      * 订阅深度数据
      *
@@ -181,7 +170,7 @@ class OkexSpotMarketService @Autowired constructor(
      */
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
         val ch = "spot/depth:${string(symbol)}"
-        return newSubscription<Depth>(ch) { it, sub ->
+        return dispatcher.newSubscription<Depth>(ch) { it, sub ->
             //其中spot/depth 频道为了区分是首次全量和后续的增量返回格式将会是
             //{"table":"channel", "action":"<value>","data":"[{"<value1>","<value2>"}]"}
             //okex不使用seq
@@ -223,7 +212,7 @@ class OkexSpotMarketService @Autowired constructor(
      */
     override suspend fun subscribeDepthSnapshot(symbol: Symbol): Subscription<Depth> {
         val ch = "spot/depth5:${string(symbol)}"
-        return newSubscription<Depth>(ch) { resp, sub ->
+        return dispatcher.newSubscription<Depth>(ch) { resp, sub ->
             val data = resp.asJsonObject["data"].asJsonArray[0].asJsonObject
             sub.deliver(depth(symbol, data))
         }.subscribe()
@@ -231,7 +220,7 @@ class OkexSpotMarketService @Autowired constructor(
 
     override suspend fun subscribeTrade(symbol: Symbol): Subscription<Trade> {
         val ch = "spot/trade:${string(symbol)}"
-        return newSubscription<Trade>(ch) { resp, sub ->
+        return dispatcher.newSubscription<Trade>(ch) { resp, sub ->
             resp.asJsonObject["data"].asJsonArray.map { it.asJsonObject }
                     .map {
                         Trade(symbol,
@@ -250,7 +239,7 @@ class OkexSpotMarketService @Autowired constructor(
 
     override suspend fun subscribeTicker(symbol: Symbol): Subscription<Ticker> {
         val ch = "spot/ticker:${string(symbol)}"
-        return newSubscription<Ticker>(ch) { resp, sub ->
+        return dispatcher.newSubscription<Ticker>(ch) { resp, sub ->
             val t = resp.asJsonObject["data"].asJsonArray[0].asJsonObject
             sub.deliver(Ticker(symbol,
                     size(t["base_volume_24h"], symbol),
@@ -266,7 +255,7 @@ class OkexSpotMarketService @Autowired constructor(
 
     override suspend fun subscribeKline(symbol: Symbol, period: KlinePeriodEnum): Subscription<Kline> {
         val ch = "spot/candle${string(period)}s:${string(symbol)}"
-        return newSubscription<Kline>(ch) { resp, sub ->
+        return dispatcher.newSubscription<Kline>(ch) { resp, sub ->
             val t = resp.asJsonObject["data"].asJsonArray[0].asJsonObject["candle"].asJsonArray
             sub.deliver(Kline(symbol,
                     date(t[0].asString),

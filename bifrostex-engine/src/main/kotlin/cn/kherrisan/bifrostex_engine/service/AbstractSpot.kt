@@ -1,6 +1,6 @@
 package cn.kherrisan.bifrostex_engine.service
 
-import cn.kherrisan.bifrostex_client.core.common.DefaultScope
+import cn.kherrisan.bifrostex_client.core.common.DefaultCoroutineScope
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.SpotTradingService
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
@@ -28,7 +28,7 @@ import javax.annotation.PostConstruct
 abstract class AbstractSpot(
         val exchange: Exchange
 ) : AbstractMarket(exchange.service.buildDataAdaptor()), Spot
-        , CoroutineScope by DefaultScope(exchange.service.vertx) {
+        , CoroutineScope by DefaultCoroutineScope(exchange.service.vertx) {
 
     val logger = LogManager.getLogger()
     val spotMarketService: SpotMarketService

@@ -10,7 +10,6 @@ import com.google.gson.JsonObject
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.*
-import javax.annotation.PostConstruct
 
 abstract class AbstractServiceDataAdaptor(val metaInfo: ExchangeMetaInfo)
     : ServiceDataAdaptor {
@@ -18,6 +17,10 @@ abstract class AbstractServiceDataAdaptor(val metaInfo: ExchangeMetaInfo)
     open val klinePeriodMap: Map<KlinePeriodEnum, String> = mapOf()
     open val orderStateMap: Map<String, OrderStateEnum> = mapOf()
     open val loanStateMap: Map<LoanStatusEnum, String> = mapOf()
+
+    override fun string(tradeRoleEnum: TradeRoleEnum): String {
+        return tradeRoleEnum.name
+    }
 
     override fun string(currency: Currency): String {
         return currency.name.toLowerCase()
@@ -41,6 +44,10 @@ abstract class AbstractServiceDataAdaptor(val metaInfo: ExchangeMetaInfo)
 
     override fun loanState(str: String): LoanStatusEnum {
         return loanStateMap.entries.find { it.value == str }?.key ?: error("Unsupported loan status enum $str")
+    }
+
+    override fun tradeRole(e: JsonElement): TradeRoleEnum {
+        return TradeRoleEnum.valueOf(e.asString.toUpperCase())
     }
 
     override fun orderType(str: String): OrderTypeEnum {

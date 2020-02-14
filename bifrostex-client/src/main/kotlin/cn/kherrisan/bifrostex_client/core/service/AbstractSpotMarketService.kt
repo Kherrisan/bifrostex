@@ -5,8 +5,7 @@ import cn.kherrisan.bifrostex_client.core.common.*
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpService
 import cn.kherrisan.bifrostex_client.core.http.VertxHttpService
-import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
+import cn.kherrisan.bifrostex_client.core.websocket.AbstractWebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.CurrencyMetaInfo
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
@@ -31,12 +30,13 @@ abstract class AbstractSpotMarketService(val staticConfig: ExchangeStaticConfigu
     : SpotMarketService
         , HttpService
         , ServiceDataAdaptor by dataAdaptor
-        , IHttpUtils by HttpUtils() {
+        , IHttpUtils by HttpUtils()
+        , CoroutineScope by DefaultCoroutineScope() {
 
     /**
      * Websocket 消息发送和分发器，子类覆盖时必须 Autowired
      */
-    open val dispatcher: WebsocketDispatcher = DefaultWebsocketDispatcher()
+    open val dispatcher: AbstractWebsocketDispatcher = DefaultWebsocketDispatcher()
 
     @Autowired
     private lateinit var http: VertxHttpService
@@ -106,10 +106,4 @@ abstract class AbstractSpotMarketService(val staticConfig: ExchangeStaticConfigu
         val t = resp.body().toString(StandardCharsets.UTF_8)
         return JsonParser.parseString(t)
     }
-
-    open fun <T : Any> newSubscription(channel: String, resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
-        return newSubscription(channel, dispatcher, resolver)
-    }
-
-    abstract fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T>
 }

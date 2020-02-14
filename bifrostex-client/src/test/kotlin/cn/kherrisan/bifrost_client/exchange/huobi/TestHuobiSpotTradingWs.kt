@@ -29,4 +29,19 @@ class TestHuobiSpotTradingWs : TestSubscribeSpotTrading() {
         sub.unsubscribe()
         delay(1000)
     }
+
+    @Test
+    fun `test subscribe order deal of btc-usdt`() = runBlocking {
+        val sub = spotTradingService.subscribeOrderDeal()
+        val job = launch {
+            while (true) {
+                val orderDeal = sub.receive()
+                logger.info(orderDeal)
+            }
+        }
+        delay(20000)
+        sub.unsubscribe()
+        job.cancel()
+        delay(1000)
+    }
 }

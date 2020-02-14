@@ -3,15 +3,14 @@ package cn.kherrisan.bifrostex_client.core.websocket
 import com.google.gson.JsonElement
 import io.vertx.core.Future
 import io.vertx.kotlin.coroutines.await
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import org.apache.commons.collections.buffer.CircularFifoBuffer
 import org.apache.logging.log4j.LogManager
 
 open class DefaultSubscription<T : Any>(
         val channel: String,
-        val dispatcher: WebsocketDispatcher,
-        var resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit)
+        val dispatcher: AbstractWebsocketDispatcher,
+        var resolver: suspend (JsonElement, DefaultSubscription<T>) -> Unit)
     : AbstractSubscription<T>() {
 
     lateinit var requestPacket: () -> String
@@ -51,8 +50,6 @@ open class DefaultSubscription<T : Any>(
         }
         logger.debug("Start to subscribe $channel")
         buffer.clear()
-        @Suppress("UNCHECKED_CAST")
-        dispatcher.register(channel, this as AbstractSubscription<Any>)
         // register the unsubscribe response promise
         val future = Future.future<Any> { subscribePromise = it }
         // send the unsubscribe packet

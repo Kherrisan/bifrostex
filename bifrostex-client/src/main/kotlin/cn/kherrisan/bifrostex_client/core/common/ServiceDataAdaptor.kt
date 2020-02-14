@@ -15,6 +15,8 @@ interface ServiceDataAdaptor : DecimalAdaptor {
 
     fun string(periodEnum: KlinePeriodEnum): String
 
+    fun string(tradeRoleEnum: TradeRoleEnum): String
+
     fun string(date: Date): String
 
     fun string(state: OrderStateEnum): String
@@ -26,6 +28,8 @@ interface ServiceDataAdaptor : DecimalAdaptor {
     fun string(currency: Currency): String
 
     fun string(status: LoanStatusEnum): String
+
+    fun tradeRole(e: JsonElement): TradeRoleEnum
 
     fun orderSide(str: String): OrderSideEnum
 

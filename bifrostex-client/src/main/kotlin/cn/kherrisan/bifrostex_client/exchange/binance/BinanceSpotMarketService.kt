@@ -1,15 +1,11 @@
 package cn.kherrisan.bifrostex_client.exchange.binance
 
 import cn.kherrisan.bifrostex_client.core.common.MyDate
-import cn.kherrisan.bifrostex_client.core.common.iid
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
-import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
-import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.Promise
@@ -17,7 +13,6 @@ import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
 import io.vertx.kotlin.coroutines.dispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
@@ -38,7 +33,7 @@ class BinanceSpotMarketService @Autowired constructor(
     private lateinit var vertx: Vertx
 
     @Autowired
-    override lateinit var dispatcher: BinanceWebsocketDispatcher
+    override lateinit var dispatcher: BinanceSpotMarketWebsocketDispatcher
 
     override fun checkResponse(resp: HttpResponse<Buffer>): JsonElement {
         val obj = JsonParser.parseString(resp.bodyAsString())
@@ -162,29 +157,6 @@ class BinanceSpotMarketService @Autowired constructor(
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
-        val subscription = DefaultSubscription(channel, dispatcher, resolver)
-        subscription.subPacket = {
-            val id = iid().toInt()
-            (dispatcher as BinanceWebsocketDispatcher).idMap[id] = channel
-            Gson().toJson(mapOf(
-                    "method" to "SUBSCRIBE",
-                    "params" to listOf(channel),
-                    "id" to id
-            ))
-        }
-        subscription.unsubPacket = {
-            val id = iid().toInt()
-            (dispatcher as BinanceWebsocketDispatcher).idMap[id] = channel
-            Gson().toJson(mapOf(
-                    "method" to "UNSUBSCRIBE",
-                    "params" to listOf(channel),
-                    "id" to id
-            ))
-        }
-        return subscription
-    }
-
     /**
      * 订阅深度信息
      *
@@ -196,8 +168,8 @@ class BinanceSpotMarketService @Autowired constructor(
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
         var baseDepthPromise = Promise.promise<SequentialDepth>()
         val ch = "${symbol.nameWithoutSlash()}@depth@100ms"
-        val dedicatedDispatcher = BinanceSingleChannelDispatcher(staticConfig as BinanceStaticConfiguration, ch, runtimeConfig)
-        val sub = newSubscription<Depth>(ch, dedicatedDispatcher) { it, sub ->
+        val dedicatedDispatcher = dispatcher.newDispatcher()
+        val sub = dedicatedDispatcher.newSubscription<Depth>(ch) { it, sub ->
             try {
                 val obj = it.asJsonObject
                 val askMap = ConcurrentHashMap<BigDecimal, BigDecimal>()
@@ -257,15 +229,15 @@ class BinanceSpotMarketService @Autowired constructor(
 
     override suspend fun subscribeDepthSnapshot(symbol: Symbol): Subscription<Depth> {
         val ch = "${symbol.nameWithoutSlash()}@depth5"
-        val dispatcher = BinanceSingleChannelDispatcher(staticConfig as BinanceStaticConfiguration, ch, runtimeConfig)
-        return newSubscription<Depth>(ch, dispatcher) { resp, sub ->
+        val dedicatedDispatcher = dispatcher.newDispatcher()
+        return dedicatedDispatcher.newSubscription<Depth>(ch) { resp, sub ->
             sub.deliver(depth(symbol, resp.asJsonObject))
         }.subscribe()
     }
 
     override suspend fun subscribeTrade(symbol: Symbol): Subscription<Trade> {
         val ch = "${symbol.nameWithoutSlash()}@trade"
-        return newSubscription<Trade>(ch) { it, sub ->
+        return dispatcher.newSubscription<Trade>(ch) { it, sub ->
             val obj = it.asJsonObject
             sub.deliver(Trade(symbol,
                     obj["t"].asString,
@@ -279,7 +251,7 @@ class BinanceSpotMarketService @Autowired constructor(
 
     override suspend fun subscribeTicker(symbol: Symbol): Subscription<Ticker> {
         val ch = "${symbol.nameWithoutSlash()}@ticker"
-        return newSubscription<Ticker>(ch) { it, sub ->
+        return dispatcher.newSubscription<Ticker>(ch) { it, sub ->
             val obj = it.asJsonObject
             sub.deliver(Ticker(symbol,
                     size(obj["q"], symbol),
@@ -296,7 +268,7 @@ class BinanceSpotMarketService @Autowired constructor(
 
     override suspend fun subscribeKline(symbol: Symbol, period: KlinePeriodEnum): Subscription<Kline> {
         val ch = "${symbol.nameWithoutSlash()}@kline_${string(period)}"
-        return newSubscription<Kline>(ch) { it, sub ->
+        return dispatcher.newSubscription<Kline>(ch) { it, sub ->
             val k = it.asJsonObject["k"].asJsonObject
             sub.deliver(Kline(symbol,
                     date(it.asJsonObject["E"].asLong.toString()),

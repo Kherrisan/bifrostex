@@ -25,6 +25,11 @@ class OkexAuthenticateService(val host: String) : AuthenticationService {
     }
 
     override fun signWebsocketRequest(method: String, path: String, params: MutableMap<String, Any>) {
-        throw NotImplementedError()
+        val runtimeConfig = SpringContainer[OkexRuntimeConfig::class]
+        params["api_key"] = runtimeConfig.apiKey!!
+        params["passphrase"] = runtimeConfig.password!!
+        params["timestamp"] = "${System.currentTimeMillis().toFloat() / 1000}"
+        val payload = "${params["timestamp"]}${method}${path}"
+        params["sign"] = Base64.getEncoder().encodeToString(hmacSHA256Signature(payload, runtimeConfig.secretKey!!))
     }
 }

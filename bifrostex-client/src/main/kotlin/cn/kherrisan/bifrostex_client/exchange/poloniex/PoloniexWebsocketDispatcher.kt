@@ -1,8 +1,7 @@
 package cn.kherrisan.bifrostex_client.exchange.poloniex
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
-import kotlinx.coroutines.CoroutineScope
+import cn.kherrisan.bifrostex_client.core.websocket.AbstractWebsocketDispatcher
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -10,12 +9,12 @@ import org.springframework.stereotype.Component
 class PoloniexWebsocketDispatcher @Autowired constructor(
         val staticConfiguration: PoloniexStaticConfiguration,
         runtimeConfig: PoloniexRuntimeConfig
-) : WebsocketDispatcher(runtimeConfig) {
+) : AbstractWebsocketDispatcher(runtimeConfig) {
 
     override val host: String = staticConfiguration.spotMarketWsHost
     override val name: ExchangeName = ExchangeName.POLONIEX
 
-    override suspend fun CoroutineScope.dispatch(bytes: ByteArray) {
+    override suspend fun dispatch(bytes: ByteArray) {
         throw NotImplementedError()
     }
 }

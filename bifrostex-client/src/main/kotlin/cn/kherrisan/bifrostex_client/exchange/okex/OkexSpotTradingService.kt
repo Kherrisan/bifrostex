@@ -4,6 +4,7 @@ import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderStateEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderTypeEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotTradingService
+import cn.kherrisan.bifrostex_client.core.websocket.Subscription
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
 import com.google.gson.JsonElement
@@ -21,6 +22,9 @@ class OkexSpotTradingService @Autowired constructor(
         staticConfiguration: OkexStaticConfiguration,
         dataAdaptor: OkexServiceDataAdaptor
 ) : AbstractSpotTradingService(staticConfiguration, dataAdaptor, OkexAuthenticateService(staticConfiguration.spotTradingHttpHost)) {
+
+    @Autowired
+    private lateinit var dispatcher: OkexSpotTradingWebsocketDispatcher
 
     override fun checkResponse(http: HttpResponse<Buffer>): JsonElement {
         val e = JsonParser.parseString(http.bodyAsString())
@@ -192,5 +196,13 @@ class OkexSpotTradingService @Autowired constructor(
 
     override suspend fun transferToFuture(currency: Currency, amount: BigDecimal, symbol: Symbol): TransactionResult {
         throw NotImplementedError()
+    }
+
+    override suspend fun subscribeBalance(symbol: Symbol?): Subscription<SpotBalance> {
+        return super.subscribeBalance(symbol)
+    }
+
+    override suspend fun subscribeOrderDeal(symbol: Symbol?): Subscription<SpotOrderDeal> {
+        return super.subscribeOrderDeal(symbol)
     }
 }

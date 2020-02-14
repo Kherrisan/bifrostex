@@ -1,23 +1,19 @@
 package cn.kherrisan.bifrostex_client.exchange.huobi
 
-import cn.kherrisan.bifrostex_client.core.common.iid
 import cn.kherrisan.bifrostex_client.core.common.randomDelay
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
 import cn.kherrisan.bifrostex_client.core.websocket.AbstractSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
-import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
 import io.vertx.kotlin.coroutines.dispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,8 +31,8 @@ class HuobiSpotMarketService @Autowired constructor(
 ) : AbstractSpotMarketService(staticConfig, dataAdaptor, metaInfo) {
 
     @Autowired
-    @Qualifier("huobiWebsocketDispatcher")
-    override lateinit var dispatcher: HuobiWebsocketDispatcher
+    @Qualifier("huobiSpotMarketWebsocketDispatcher")
+    override lateinit var dispatcher: HuobiSpotMarketWebsocketDispatcher
 
     @Autowired
     private lateinit var vertx: Vertx
@@ -180,14 +176,6 @@ class HuobiSpotMarketService @Autowired constructor(
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
-        val subscription = DefaultSubscription(channel, dispatcher, resolver)
-        subscription.requestPacket = { Gson().toJson(mapOf("req" to channel, "id" to iid())) }
-        subscription.subPacket = { Gson().toJson(mapOf("sub" to channel, "id" to iid())) }
-        subscription.unsubPacket = { Gson().toJson(mapOf("unsub" to channel, "id" to iid())) }
-        return subscription
-    }
-
     private suspend fun doSubscribeDepth(sub: DefaultSubscription<Depth>, symbol: Symbol) {
         var hasRequestAgain = false
         var disorderCounter = 0
@@ -278,15 +266,15 @@ class HuobiSpotMarketService @Autowired constructor(
      * @return Subscription<Depth>
      */
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
-        val ch = "market.${string(symbol)}.mbp.150"
-        val sub = newSubscription<Depth>(ch) { _, _ -> }
+        val channel = "market.${string(symbol)}.mbp.150"
+        val sub = dispatcher.newSubscription<Depth>(channel)
         doSubscribeDepth(sub, symbol)
         return sub
     }
 
     override suspend fun subscribeDepthSnapshot(symbol: Symbol): Subscription<Depth> {
-        val ch = "market.${symbol.nameWithoutSlash()}.depth.step0"
-        return newSubscription<Depth>(ch) { resp, sub ->
+        val channel = "market.${symbol.nameWithoutSlash()}.depth.step0"
+        return dispatcher.newSubscription<Depth>(channel) { resp, sub ->
             val tick = resp.asJsonObject["tick"].asJsonObject
             val askMap = HashMap<BigDecimal, BigDecimal>()
             val bidMap = HashMap<BigDecimal, BigDecimal>()
@@ -310,8 +298,8 @@ class HuobiSpotMarketService @Autowired constructor(
      * @return Subscription<Trade>
      */
     override suspend fun subscribeTrade(symbol: Symbol): Subscription<Trade> {
-        val ch = "market.${symbol.nameWithoutSlash()}.trade.detail"
-        return newSubscription<Trade>(ch) { it, sub ->
+        val channel = "market.${symbol.nameWithoutSlash()}.trade.detail"
+        return dispatcher.newSubscription<Trade>(channel) { it, sub ->
             val data = it.asJsonObject["tick"].asJsonObject["data"].asJsonArray[0].asJsonObject
             sub.deliver(Trade(symbol,
                     data["tradeId"].asLong.toString(),
@@ -336,14 +324,14 @@ class HuobiSpotMarketService @Autowired constructor(
     override suspend fun subscribeTicker(symbol: Symbol): Subscription<Ticker> {
         //订阅bbo数据
         val bboChannel = "market.${symbol.nameWithoutSlash()}.bbo"
-        val bboSub = newSubscription<AskBid>(bboChannel) { it, sub ->
+        val bboSub = dispatcher.newSubscription<AskBid>(bboChannel) { it, sub ->
             //bbo频道在收到数据后，存入缓存中。
             val tick = it.asJsonObject["tick"].asJsonObject
             sub.deliver(AskBid(price(tick["ask"], symbol), price(tick["bid"], symbol)))
         }
         //订阅ticker数据
         val tickerChannel = "market.${symbol.nameWithoutSlash()}.detail"
-        val tickerSub = newSubscription<Ticker>(tickerChannel) { it, sub ->
+        val tickerSub = dispatcher.newSubscription<Ticker>(tickerChannel) { it, sub ->
             val tick = it.asJsonObject["tick"].asJsonObject
             sub.deliver(Ticker(
                     symbol,
@@ -382,7 +370,7 @@ class HuobiSpotMarketService @Autowired constructor(
      */
     override suspend fun subscribeKline(symbol: Symbol, period: KlinePeriodEnum): Subscription<Kline> {
         val ch = "market.${symbol.nameWithoutSlash()}.kline.${string(period)}"
-        return newSubscription<Kline>(ch) { it, sub ->
+        return dispatcher.newSubscription<Kline>(ch) { it, sub ->
             val tick = it.asJsonObject["tick"].asJsonObject
             sub.deliver(Kline(symbol,
                     date(it.asJsonObject["ts"].asLong.toString()),

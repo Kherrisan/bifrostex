@@ -1,6 +1,6 @@
 package cn.kherrisan.bifrostex_client.core.service
 
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
+import cn.kherrisan.bifrostex_client.core.websocket.AbstractWebsocketDispatcher
 
 abstract class AbstractExchangeSubService {
 
@@ -12,7 +12,7 @@ abstract class AbstractExchangeSubService {
 
     open var authWsHost: String = throw NotImplementedError()
 
-    open var dispatcher: WebsocketDispatcher = throw NotImplementedError()
+    open var dispatcher: AbstractWebsocketDispatcher = throw NotImplementedError()
 
     open fun publicUrl(subPath: String): String {
         if (subPath.startsWith("http")) {

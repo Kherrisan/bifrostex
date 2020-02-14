@@ -11,14 +11,13 @@ import cn.kherrisan.bifrostex_client.core.enumeration.OrderTypeEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotTradingService
 import cn.kherrisan.bifrostex_client.core.websocket.AbstractSubscription
+import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
-import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
 import kotlinx.coroutines.runBlocking
@@ -43,8 +42,6 @@ class HuobiSpotTradingService @Autowired constructor(
 
     @Autowired
     private lateinit var dispatcher: HuobiSpotTradingWebsocketDispatcher
-
-    private val authenticateService = HuobiAuthenticateService(staticConfig.spotTradingWsHost)
 
     @PostConstruct
     fun initAccountIdMap() {
@@ -323,28 +320,6 @@ class HuobiSpotTradingService @Autowired constructor(
         }
     }
 
-    private suspend fun awaitWebsocketAuthentication(dispatcher: WebsocketDispatcher) {
-        if ((dispatcher as HuobiSpotTradingWebsocketDispatcher).isAuth) {
-            return
-        }
-        val promise = Promise.promise<Any>()
-        val op = "auth"
-        val subscription = dispatcher.newSubscription<Any>(op) { elem, _ ->
-            val obj = elem.asJsonObject
-            if (obj["err-code"].asInt == 0) {
-                //鉴权成功
-                dispatcher.isAuth = true
-            }
-        }
-        val params = mutableMapOf<String, Any>()
-        authenticateService.signWebsocketRequest(GET, "/ws/v1", params)
-        params["op"] = op
-        subscription.requestPacket = {
-            Gson().toJson(params)
-        }
-        subscription.request()
-    }
-
     /**
      * 订阅账户余额增量数据
      *
@@ -355,18 +330,8 @@ class HuobiSpotTradingService @Autowired constructor(
      * @return Subscription<SpotBalance>
      */
     override suspend fun subscribeBalance(symbol: Symbol?): Subscription<SpotBalance> {
-        awaitWebsocketAuthentication(dispatcher)
         val ch = "accounts"
-        val subParams = mutableMapOf(
-                "op" to "sub",
-                "topic" to ch,
-                "model" to "1"
-        )
-        val unsubParams = mapOf(
-                "op" to "unsub",
-                "topic" to ch
-        )
-        val totalSubscription = dispatcher.newSubscription<SpotBalance>(ch) { elem, sub ->
+        val totalSubscription = dispatcher.newAuthenticatedSubscription<SpotBalance>(ch) { elem, sub ->
             val obj = elem.asJsonObject
             val time = MyDate(obj["ts"].asLong)
             obj["data"].asJsonObject["list"].asJsonArray.map { it.asJsonObject }
@@ -383,12 +348,16 @@ class HuobiSpotTradingService @Autowired constructor(
                         logger.debug(totalBalance)
                         sub.deliver(totalBalance)
                     }
+        } as DefaultSubscription<SpotBalance>
+        totalSubscription.subPacket = {
+            Gson().toJson(mutableMapOf(
+                    "op" to "sub",
+                    "topic" to ch,
+                    "model" to "1"
+            ))
         }
-        totalSubscription.subPacket = { Gson().toJson(subParams) }
-        totalSubscription.unsubPacket = { Gson().toJson(unsubParams) }
-        val newDispatcher = dispatcher.newDispatcher()
-        awaitWebsocketAuthentication(newDispatcher)
-        val freeSubscription = newDispatcher.newSubscription<SpotBalance>(ch) { elem, sub ->
+        val newDispatcher = dispatcher.newDispatcher() as HuobiSpotTradingWebsocketDispatcher
+        val freeSubscription = newDispatcher.newAuthenticatedSubscription<SpotBalance>(ch) { elem, sub ->
             val obj = elem.asJsonObject
             val time = MyDate(obj["ts"].asLong)
             obj["data"].asJsonObject["list"].asJsonArray.map { it.asJsonObject }
@@ -404,10 +373,14 @@ class HuobiSpotTradingService @Autowired constructor(
                         logger.debug(freeBalance)
                         sub.deliver(freeBalance)
                     }
+        } as DefaultSubscription<SpotBalance>
+        freeSubscription.subPacket = {
+            Gson().toJson(mutableMapOf(
+                    "op" to "sub",
+                    "topic" to ch,
+                    "model" to "0"
+            ))
         }
-        subParams["model"] = "0"
-        freeSubscription.subPacket = { Gson().toJson(subParams) }
-        freeSubscription.unsubPacket = { Gson().toJson(unsubParams) }
         @Suppress("UNCHECKED_CAST")
         return dispatcher.newSynchronizeSubscription<SpotBalance> { list, abstractSubscription ->
             val freeBalance = list[0] as SpotBalance
@@ -419,8 +392,26 @@ class HuobiSpotTradingService @Autowired constructor(
                 .subscribe()
     }
 
-    override suspend fun subscribeOrder(symbol: Symbol): Subscription<SpotOrder> {
-        awaitWebsocketAuthentication(dispatcher)
-        throw NotImplementedError()
+    override suspend fun subscribeOrderDeal(symbol: Symbol?): Subscription<SpotOrderDeal> {
+        val symbolString = symbol?.name() ?: "*"
+        val channel = "orders.${symbolString}.update"
+        val subscription = dispatcher.newAuthenticatedSubscription<SpotOrderDeal>(channel) { elem, sub ->
+            val obj = elem.asJsonObject
+            val time = MyDate(obj["ts"].asLong)
+            val data = obj["data"].asJsonObject
+            val sym = symbol(data["symbol"])
+            sub.deliver(SpotOrderDeal(
+                    data["match-id"].asLong.toString(),
+                    data["order-id"].asLong.toString(),
+                    sym,
+                    orderState(data["order-state"]),
+                    tradeRole(data["role"]),
+                    price(data["price"], sym),
+                    size(data["filled-amount"], sym),
+                    0f.toBigDecimal(),
+                    time
+            ))
+        }
+        return subscription.subscribe()
     }
 }

@@ -1,12 +1,13 @@
 package cn.kherrisan.bifrostex_client.exchange.gateio
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
+import cn.kherrisan.bifrostex_client.core.common.iid
+import cn.kherrisan.bifrostex_client.core.websocket.AbstractWebsocketDispatcher
 import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.exchange.binance.OKEX_EMPTY_TRADE
+import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
-import kotlinx.coroutines.CoroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
@@ -14,10 +15,10 @@ import java.nio.charset.StandardCharsets
 val GATEIO_EMPTY_TRADE = OKEX_EMPTY_TRADE
 
 @Component
-open class GateioWebsocketDispatcher @Autowired constructor(
+open class GateioSpotMarketWebsocketDispatcher @Autowired constructor(
         staticConfiguration: GateioStaticConfiguration,
         runtimeConfig: GateioRuntimeConfig
-) : WebsocketDispatcher(runtimeConfig) {
+) : AbstractWebsocketDispatcher(runtimeConfig) {
 
     val idMap = HashMap<Int, String>()
     override val host: String = staticConfiguration.spotMarketWsHost
@@ -34,7 +35,7 @@ open class GateioWebsocketDispatcher @Autowired constructor(
         }
     }
 
-    override suspend fun CoroutineScope.dispatch(bytes: ByteArray) {
+    override suspend fun dispatch(bytes: ByteArray) {
         val obj = JsonParser.parseString(bytes.toString(StandardCharsets.UTF_8)).asJsonObject
         if (obj.has("result")) {
             // sub and unsub event
@@ -56,7 +57,37 @@ open class GateioWebsocketDispatcher @Autowired constructor(
             }
             val ch = "$m:$sym"
             val sub = defaultSubscriptionMap[ch] as DefaultSubscription
-            sub.resolver(this, obj, sub)
+            sub.resolver(obj, sub)
         }
+    }
+
+    override fun <T : Any> newSubscription(channel: String, resolver: suspend (JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
+        val subscription = super.newSubscription(channel, resolver)
+        val comm = channel.indexOf(":")
+        // 这里的channel并不是真正的channel
+        val method = channel.substring(0, comm)
+        val params = channel.substring(comm + 1)
+        val args = JsonParser.parseString(params).asJsonArray
+        // 真正的channel——ticker:$symbol
+        val ch = "$method:${args[0].asString}"
+        subscription.subPacket = {
+            val id = iid().toInt()
+            idMap[id] = ch
+            Gson().toJson(mapOf(
+                    "id" to id,
+                    "method" to "$method.subscribe",
+                    "params" to args
+            ))
+        }
+        subscription.unsubPacket = {
+            val id = iid().toInt()
+            idMap[id] = ch
+            Gson().toJson(mapOf(
+                    "id" to id,
+                    "method" to "$method.unsubscribe",
+                    "params" to args
+            ))
+        }
+        return subscription
     }
 }

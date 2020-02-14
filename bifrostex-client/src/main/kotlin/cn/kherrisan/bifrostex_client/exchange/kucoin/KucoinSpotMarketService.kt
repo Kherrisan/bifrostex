@@ -1,21 +1,19 @@
 package cn.kherrisan.bifrostex_client.exchange.kucoin
 
-import cn.kherrisan.bifrostex_client.core.common.*
+import cn.kherrisan.bifrostex_client.core.common.MyDate
+import cn.kherrisan.bifrostex_client.core.common.POST
+import cn.kherrisan.bifrostex_client.core.common.md5
+import cn.kherrisan.bifrostex_client.core.common.uuid
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.enumeration.OrderSideEnum
 import cn.kherrisan.bifrostex_client.core.http.HttpMediaTypeEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
 import cn.kherrisan.bifrostex_client.core.websocket.AbstractSubscription
-import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
-import com.google.gson.Gson
-import com.google.gson.JsonElement
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
@@ -191,27 +189,6 @@ class KucoinSpotMarketService @Autowired constructor(
                 .sortedBy { it.time }
     }
 
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
-        val sub = DefaultSubscription<T>(channel, dispatcher, resolver)
-        sub.subPacket = {
-            val id = iid().toInt()
-            (dispatcher as KucoinWebsocketDispatcher).idMap[id] = channel
-            Gson().toJson(mapOf("id" to id,
-                    "type" to "subscribe",
-                    "response" to true,
-                    "topic" to channel))
-        }
-        sub.unsubPacket = {
-            val id = iid().toInt()
-            (dispatcher as KucoinWebsocketDispatcher).idMap[id] = channel
-            Gson().toJson(mapOf("id" to id,
-                    "type" to "unsubscribe",
-                    "response" to true,
-                    "topic" to channel))
-        }
-        return sub
-    }
-
     /**
      * 订阅深度数据
      *
@@ -223,7 +200,7 @@ class KucoinSpotMarketService @Autowired constructor(
      */
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
         val ch = "/market/level2:${string(symbol)}"
-        val sub = newSubscription<Depth>(ch) { it, sub ->
+        val sub = dispatcher.newSubscription<Depth>(ch) { it, sub ->
             val data = it.asJsonObject["data"].asJsonObject
             val askChanges = data["changes"].asJsonObject["asks"].asJsonArray
                     .map { it.asJsonArray }
@@ -303,9 +280,9 @@ class KucoinSpotMarketService @Autowired constructor(
      * @return Subscription<Trade>
      */
     override suspend fun subscribeTrade(symbol: Symbol): Subscription<Trade> {
-        val dispatcher = KucoinWebsocketDispatcher(runtimeConfig)
+        val dedicatedDispatcher = dispatcher.newDispatcher()
         val ch = "/market/match:${string(symbol)}"
-        val sub = newSubscription<Trade>(ch, dispatcher) { it, sub ->
+        val sub = dedicatedDispatcher.newSubscription<Trade>(ch) { it, sub ->
             val data = it.asJsonObject["data"].asJsonObject
             sub.deliver(Trade(symbol,
                     data["tradeId"].asString,
@@ -327,7 +304,7 @@ class KucoinSpotMarketService @Autowired constructor(
      */
     override suspend fun subscribeTicker(symbol: Symbol): Subscription<Ticker> {
         val tickerChannel = "/market/snapshot:${string(symbol)}"
-        val tickerSub = newSubscription<Ticker>(tickerChannel) { it, sub ->
+        val tickerSub = dispatcher.newSubscription<Ticker>(tickerChannel) { it, sub ->
             val data = it.asJsonObject["data"].asJsonObject["data"].asJsonObject
             val ticker = Ticker(symbol,
                     bigDecimal(data["vol"]),
@@ -344,7 +321,7 @@ class KucoinSpotMarketService @Autowired constructor(
             sub.deliver(ticker)
         }
         val bboChannel = "/market/ticker:${string(symbol)}"
-        val bboSub = newSubscription<AskBid>(bboChannel) { it, sub ->
+        val bboSub = dispatcher.newSubscription<AskBid>(bboChannel) { it, sub ->
             val data = it.asJsonObject["data"].asJsonObject
             val ab = AskBid(bigDecimal(data["bestAsk"]), bigDecimal(data["bestBid"]))
             logger.debug(ab)

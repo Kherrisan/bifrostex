@@ -1,5 +1,6 @@
 package cn.kherrisan.bifrostex_client.core.service
 
+import cn.kherrisan.bifrostex_client.core.common.DefaultCoroutineScope
 import cn.kherrisan.bifrostex_client.core.common.ExchangeStaticConfiguration
 import cn.kherrisan.bifrostex_client.core.common.ServiceDataAdaptor
 import cn.kherrisan.bifrostex_client.core.common.SpotTradingService
@@ -16,6 +17,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.client.HttpResponse
+import kotlinx.coroutines.CoroutineScope
 import org.apache.logging.log4j.LogManager
 import java.math.BigDecimal
 import java.nio.charset.StandardCharsets
@@ -26,7 +28,8 @@ abstract class AbstractSpotTradingService(
         val authenticationService: AuthenticationService
 ) : SpotTradingService
         , SignedHttpService by DefaultSignedHttpService(authenticationService)
-        , ServiceDataAdaptor by dataAdaptor {
+        , ServiceDataAdaptor by dataAdaptor
+        , CoroutineScope by DefaultCoroutineScope() {
 
     val logger = LogManager.getLogger()
 
@@ -34,7 +37,7 @@ abstract class AbstractSpotTradingService(
         throw NotImplementedError()
     }
 
-    override suspend fun subscribeOrder(symbol: Symbol): Subscription<SpotOrder> {
+    override suspend fun subscribeOrderDeal(symbol: Symbol?): Subscription<SpotOrderDeal> {
         throw NotImplementedError()
     }
 

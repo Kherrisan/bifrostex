@@ -3,13 +3,9 @@ package cn.kherrisan.bifrostex_client.exchange.poloniex
 import cn.kherrisan.bifrostex_client.core.common.MyDate
 import cn.kherrisan.bifrostex_client.core.enumeration.KlinePeriodEnum
 import cn.kherrisan.bifrostex_client.core.service.AbstractSpotMarketService
-import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
 import cn.kherrisan.bifrostex_client.entity.*
 import cn.kherrisan.bifrostex_client.entity.Currency
-import com.google.gson.JsonElement
-import kotlinx.coroutines.CoroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -28,9 +24,6 @@ class PoloniexSpotMarketService @Autowired constructor(
         dataAdaptor: PoloniexServiceDataAdaptor,
         metaInfo: PoloniexMetaInfo
 ) : AbstractSpotMarketService(staticConfiguration, dataAdaptor, metaInfo) {
-    override fun <T : Any> newSubscription(channel: String, dispatcher: WebsocketDispatcher, resolver: suspend CoroutineScope.(JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
-        throw NotImplementedError()
-    }
 
     /**
      * 获得所有symbols

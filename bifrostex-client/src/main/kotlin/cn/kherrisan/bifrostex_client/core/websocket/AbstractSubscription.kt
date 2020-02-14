@@ -1,11 +1,11 @@
 package cn.kherrisan.bifrostex_client.core.websocket
 
-import cn.kherrisan.bifrostex_client.core.common.DefaultScope
+import cn.kherrisan.bifrostex_client.core.common.DefaultCoroutineScope
 import io.vertx.core.Promise
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 
-abstract class AbstractSubscription<T : Any> : Subscription<T>, CoroutineScope by DefaultScope() {
+abstract class AbstractSubscription<T : Any> : Subscription<T>, CoroutineScope by DefaultCoroutineScope() {
 
     protected lateinit var subscribePromise: Promise<Any>
     protected lateinit var unsubscribePromise: Promise<Any>

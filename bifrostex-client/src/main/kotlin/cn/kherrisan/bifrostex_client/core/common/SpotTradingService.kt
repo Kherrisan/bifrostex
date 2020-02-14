@@ -4,7 +4,7 @@ import cn.kherrisan.bifrostex_client.core.service.SpotMarginTradingService
 import cn.kherrisan.bifrostex_client.core.websocket.Subscription
 import cn.kherrisan.bifrostex_client.entity.Currency
 import cn.kherrisan.bifrostex_client.entity.SpotBalance
-import cn.kherrisan.bifrostex_client.entity.SpotOrder
+import cn.kherrisan.bifrostex_client.entity.SpotOrderDeal
 import cn.kherrisan.bifrostex_client.entity.Symbol
 
 interface SpotTradingService : SpotMarginTradingService {
@@ -24,7 +24,7 @@ interface SpotTradingService : SpotMarginTradingService {
      * @param symbol Symbol
      * @return Subscription<SpotBalance>
      */
-    suspend fun subscribeBalance(symbol: Symbol?): Subscription<SpotBalance>
+    suspend fun subscribeBalance(symbol: Symbol? = null): Subscription<SpotBalance>
 
     /**
      * 订阅账户订单增量数据
@@ -32,5 +32,5 @@ interface SpotTradingService : SpotMarginTradingService {
      * @param symbol Symbol
      * @return Subscription<SpotOrder>
      */
-    suspend fun subscribeOrder(symbol: Symbol): Subscription<SpotOrder>
+    suspend fun subscribeOrderDeal(symbol: Symbol? = null): Subscription<SpotOrderDeal>
 }

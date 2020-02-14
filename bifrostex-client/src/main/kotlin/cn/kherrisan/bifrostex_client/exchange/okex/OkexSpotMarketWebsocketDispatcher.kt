@@ -2,11 +2,12 @@ package cn.kherrisan.bifrostex_client.exchange.okex
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.d64ungzip
+import cn.kherrisan.bifrostex_client.core.websocket.AbstractWebsocketDispatcher
 import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
+import com.google.gson.Gson
+import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.kotlin.coroutines.dispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.springframework.stereotype.Component
@@ -14,16 +15,16 @@ import org.springframework.stereotype.Component
 const val PING_PERIOD = 20_1000L
 
 @Component
-class OkexWebsocketDispatcher(
+open class OkexSpotMarketWebsocketDispatcher(
         val staticConfiguration: OkexStaticConfiguration,
         runtimeConfig: OkexRuntimeConfig
-) : WebsocketDispatcher(runtimeConfig) {
+) : AbstractWebsocketDispatcher(runtimeConfig) {
 
     override val host: String = staticConfiguration.spotMarketWsHost
     override val name: ExchangeName = ExchangeName.OKEX
     private var receivedInPeriod = false
 
-    fun CoroutineScope.resetPingTimer() {
+    fun resetPingTimer() {
         launch(vertx.dispatcher()) {
             receivedInPeriod = false
             delay(PING_PERIOD)
@@ -37,7 +38,7 @@ class OkexWebsocketDispatcher(
         }
     }
 
-    override suspend fun CoroutineScope.dispatch(bytes: ByteArray) {
+    override suspend fun dispatch(bytes: ByteArray) {
         receivedInPeriod = true
         val clear = d64ungzip(bytes)
         if (clear == "pong") {
@@ -61,9 +62,16 @@ class OkexWebsocketDispatcher(
                     .forEach {
                         // deliver the data
                         val sub = defaultSubscriptionMap[it] as DefaultSubscription
-                        sub.resolver(this, obj, sub)
+                        sub.resolver(obj, sub)
                     }
         }
         resetPingTimer()
+    }
+
+    override fun <T : Any> newSubscription(channel: String, resolver: suspend (JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
+        val subscription = super.newSubscription(channel, resolver)
+        subscription.subPacket = { Gson().toJson(mapOf("op" to "subscribe", "args" to listOf(channel))) }
+        subscription.unsubPacket = { Gson().toJson(mapOf("op" to "unsubscribe", "args" to listOf(channel))) }
+        return subscription
     }
 }

@@ -1,21 +1,22 @@
 package cn.kherrisan.bifrostex_client.exchange.binance
 
 import cn.kherrisan.bifrostex_client.core.common.ExchangeName
+import cn.kherrisan.bifrostex_client.core.common.iid
+import cn.kherrisan.bifrostex_client.core.websocket.AbstractWebsocketDispatcher
 import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
-import cn.kherrisan.bifrostex_client.core.websocket.WebsocketDispatcher
+import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import io.vertx.core.Promise
-import kotlinx.coroutines.CoroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
 
 @Component
-open class BinanceWebsocketDispatcher @Autowired constructor(
+open class BinanceSpotMarketWebsocketDispatcher @Autowired constructor(
         staticConfig: BinanceStaticConfiguration,
         runtimeConfig: BinanceRuntimeConfig
-) : WebsocketDispatcher(runtimeConfig) {
+) : AbstractWebsocketDispatcher(runtimeConfig) {
 
     override val host: String = staticConfig.spotMarketWsHost
     override val name: ExchangeName = ExchangeName.BINANCE
@@ -58,7 +59,7 @@ open class BinanceWebsocketDispatcher @Autowired constructor(
         return false
     }
 
-    override suspend fun CoroutineScope.dispatch(bytes: ByteArray) {
+    override suspend fun dispatch(bytes: ByteArray) {
         if (handlePing(bytes)) {
             return
         }
@@ -79,7 +80,7 @@ open class BinanceWebsocketDispatcher @Autowired constructor(
                 }
                 val ch = "$s@$e".toLowerCase()
                 val sub = defaultSubscriptionMap[ch] as DefaultSubscription
-                sub.resolver(this, obj, sub)
+                sub.resolver(obj, sub)
             } catch (exception: Exception) {
                 logger.error(exception)
                 logger.error(obj)
@@ -95,5 +96,28 @@ open class BinanceWebsocketDispatcher @Autowired constructor(
             pongPromise!!.fail("Active close.")
         }
         super.close()
+    }
+
+    override fun <T : Any> newSubscription(channel: String, resolver: suspend (JsonElement, DefaultSubscription<T>) -> Unit): DefaultSubscription<T> {
+        val subscription = super.newSubscription(channel, resolver)
+        subscription.subPacket = {
+            val id = iid().toInt()
+            idMap[id] = channel
+            Gson().toJson(mapOf(
+                    "method" to "SUBSCRIBE",
+                    "params" to listOf(channel),
+                    "id" to id
+            ))
+        }
+        subscription.unsubPacket = {
+            val id = iid().toInt()
+            idMap[id] = channel
+            Gson().toJson(mapOf(
+                    "method" to "UNSUBSCRIBE",
+                    "params" to listOf(channel),
+                    "id" to id
+            ))
+        }
+        return subscription
     }
 }
