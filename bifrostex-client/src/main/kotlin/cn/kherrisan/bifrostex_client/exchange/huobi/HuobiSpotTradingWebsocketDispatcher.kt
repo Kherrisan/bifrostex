@@ -102,9 +102,14 @@ class HuobiSpotTradingWebsocketDispatcher @Autowired constructor(
         return subscription
     }
 
-    override fun newDispatcher(): AbstractWebsocketDispatcher {
+    override fun newChildDispatcher(): AbstractWebsocketDispatcher {
         val d = HuobiSpotTradingWebsocketDispatcher(staticConfig, runtimeConfig as HuobiRuntimeConfig)
         childDispatcher.add(d)
         return d
+    }
+
+    override suspend fun reconfigure() {
+        super.reconfigure()
+        isAuthenticated = false
     }
 }

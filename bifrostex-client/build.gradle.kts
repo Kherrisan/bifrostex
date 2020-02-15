@@ -33,6 +33,7 @@ configurations {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.apache.logging.log4j", "log4j-api", Vers.Deps.log4jVersion)
     implementation("org.apache.logging.log4j", "log4j-core", Vers.Deps.log4jVersion)
     implementation("com.google.code.gson", "gson", "2.8.6")

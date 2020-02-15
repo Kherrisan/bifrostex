@@ -132,7 +132,7 @@ class GateioSpotMarketService @Autowired constructor(
      */
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
         val ch = "depth:${Gson().toJson(listOf(string(symbol), 5, "0.01"))}"
-        val dedicatedDispatcher = dispatcher.newDispatcher()
+        val dedicatedDispatcher = dispatcher.newChildDispatcher()
         return dedicatedDispatcher.newSubscription<Depth>(ch) { obj, sub ->
             val params = obj.asJsonObject["params"].asJsonArray
             val clean = params[0].asBoolean
@@ -192,7 +192,7 @@ class GateioSpotMarketService @Autowired constructor(
 
     override suspend fun subscribeKline(symbol: Symbol, period: KlinePeriodEnum): Subscription<Kline> {
         val args = "kline:${listOf(string(symbol), string(period).toInt())}"
-        val dedicatedDispatcher = dispatcher.newDispatcher()
+        val dedicatedDispatcher = dispatcher.newChildDispatcher()
         return dedicatedDispatcher.newSubscription<Kline>(args) { obj, sub ->
             obj.asJsonObject["params"].asJsonArray.map { it.asJsonArray }
                     .map {

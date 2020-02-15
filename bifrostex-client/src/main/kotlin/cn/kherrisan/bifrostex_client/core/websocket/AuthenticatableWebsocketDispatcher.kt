@@ -23,4 +23,6 @@ interface AuthenticatableWebsocketDispatcher : WebsocketDispatcher {
     }
 
     suspend fun authenticate()
+
+
 }

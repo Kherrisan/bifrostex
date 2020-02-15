@@ -168,7 +168,7 @@ class BinanceSpotMarketService @Autowired constructor(
     override suspend fun subscribeDepth(symbol: Symbol): Subscription<Depth> {
         var baseDepthPromise = Promise.promise<SequentialDepth>()
         val ch = "${symbol.nameWithoutSlash()}@depth@100ms"
-        val dedicatedDispatcher = dispatcher.newDispatcher()
+        val dedicatedDispatcher = dispatcher.newChildDispatcher()
         val sub = dedicatedDispatcher.newSubscription<Depth>(ch) { it, sub ->
             try {
                 val obj = it.asJsonObject
@@ -229,7 +229,7 @@ class BinanceSpotMarketService @Autowired constructor(
 
     override suspend fun subscribeDepthSnapshot(symbol: Symbol): Subscription<Depth> {
         val ch = "${symbol.nameWithoutSlash()}@depth5"
-        val dedicatedDispatcher = dispatcher.newDispatcher()
+        val dedicatedDispatcher = dispatcher.newChildDispatcher()
         return dedicatedDispatcher.newSubscription<Depth>(ch) { resp, sub ->
             sub.deliver(depth(symbol, resp.asJsonObject))
         }.subscribe()

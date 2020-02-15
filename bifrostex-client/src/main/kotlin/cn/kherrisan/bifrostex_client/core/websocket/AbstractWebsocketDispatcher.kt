@@ -8,14 +8,12 @@ import io.vertx.core.http.HttpClientOptions
 import io.vertx.core.http.WebSocket
 import io.vertx.core.net.ProxyOptions
 import io.vertx.kotlin.coroutines.awaitResult
-import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicReference
 
 abstract class AbstractWebsocketDispatcher(val runtimeConfig: ExchangeRuntimeConfig)
     : WebsocketDispatcher, CoroutineScope by DefaultCoroutineScope() {
@@ -32,19 +30,27 @@ abstract class AbstractWebsocketDispatcher(val runtimeConfig: ExchangeRuntimeCon
     protected var defaultSubscriptionMap: MutableMap<String, AbstractSubscription<Any>> = ConcurrentHashMap()
     protected var synchronizeSubscriptionList: MutableList<SynchronizedSubscription<Any>> = mutableListOf()
     private lateinit var ws: WebSocket
-    private var state: AtomicReference<EndpointStateEnum> = AtomicReference(EndpointStateEnum.CLOSED)
+    private var state: EndpointStateEnum = EndpointStateEnum.CLOSED
     private var eventLoop: Job? = null
     val childDispatcher: MutableList<AbstractWebsocketDispatcher> = mutableListOf()
-    private val receiveChannel: Channel<Buffer> = Channel(1024)
-    private val sendChannel: Channel<String> = Channel(1024)
+    private lateinit var receiveChannel: Channel<Buffer>
+    private lateinit var sendChannel: Channel<String>
+    private val eventLoopContext = newSingleThreadContext("${objSimpName(this)}Context")
 
-    init {
-        launchEventLoop()
+    /**
+     *
+     */
+    open suspend fun reconfigure() {
+        receiveChannel = Channel(1024)
+        sendChannel = Channel(1024)
+        if (eventLoop == null || !eventLoop!!.isActive) {
+            launchEventLoop()
+        }
     }
 
     protected fun launchEventLoop() {
-        logger.debug("Start running dispatcher loop ${objSimpName(this)}")
-        eventLoop = launch(vertx.dispatcher()) {
+        eventLoop = launch(eventLoopContext) {
+            logger.debug("Start running dispatcher loop ${objSimpName(this)}")
             while (true) {
                 try {
                     handleChannelEvents()
@@ -75,10 +81,10 @@ abstract class AbstractWebsocketDispatcher(val runtimeConfig: ExchangeRuntimeCon
         logger.debug("Trigger unsubscribed to $ch")
         sub.triggerUnsubscribedEvent()
         if (defaultSubscriptionMap.isEmpty()) {
+            logger.debug("There is no subscription active, begin to close the websocket")
             for (sync in synchronizeSubscriptionList) {
                 sync.close()
             }
-            synchronizeSubscriptionList.clear()
             close()
         }
     }
@@ -129,7 +135,6 @@ abstract class AbstractWebsocketDispatcher(val runtimeConfig: ExchangeRuntimeCon
         logger.debug("Waiting 2s for connecting.")
         delay(2000)
         connect()
-        launchEventLoop()
     }
 
     override suspend fun connect() {
@@ -143,16 +148,20 @@ abstract class AbstractWebsocketDispatcher(val runtimeConfig: ExchangeRuntimeCon
         if (uri.scheme == "wss" && uri.port == -1) {
             port = 443
         }
-        state.set(EndpointStateEnum.CONNECTING)
+        if (state == EndpointStateEnum.CONNECTING) {
+            logger.debug("The websocket is connecting?")
+            return
+        }
         val rp = if (uri.query == null) {
             uri.path
         } else {
             "${uri.path}?${uri.query}"
         }
+        state = EndpointStateEnum.CONNECTING
         ws = awaitResult { vertx.createHttpClient(hco).webSocket(port, uri.host, rp, it) }
-        logger.debug("Connected to $host")
         ws.handler { receiveChannel.offer(it) }
-        state.set(EndpointStateEnum.CONNECTED)
+        state = EndpointStateEnum.CONNECTED
+        logger.debug("Connected to $host")
     }
 
     override suspend fun handleChannelEvents() {
@@ -161,10 +170,13 @@ abstract class AbstractWebsocketDispatcher(val runtimeConfig: ExchangeRuntimeCon
             dispatch(buffer.bytes)
         }
         while (!sendChannel.isEmpty) {
-            if (state.get() == EndpointStateEnum.INIT || state.get() == EndpointStateEnum.CLOSED) {
+            if (state == EndpointStateEnum.CLOSED) {
                 connect()
             }
-            while (state.get() == EndpointStateEnum.CONNECTING || state.get() == EndpointStateEnum.CLOSING) delay(100)
+            while (state == EndpointStateEnum.CONNECTING) delay(100)
+            if (state == EndpointStateEnum.CLOSING) {
+                throw CancellationException()
+            }
             val text = sendChannel.receive()
             ws.writeTextMessage(text)
             logger.debug("Websocket has sent $text")
@@ -175,14 +187,16 @@ abstract class AbstractWebsocketDispatcher(val runtimeConfig: ExchangeRuntimeCon
      * 关闭该 dispatcher，并回收相关的资源。
      *
      * 子类可以复写该方法，但是一定要记得要在最后调用父类方法。
+     * 运行在 eventLoop 线程
      */
     override suspend fun close() {
+        if (state == EndpointStateEnum.CLOSING) {
+            return
+        }
         logger.debug("Start to close the ${objSimpName(this)}.")
-        state.set(EndpointStateEnum.CLOSING)
-        eventLoop?.cancel(CancellationException("Active cancel this WebsocketDispatcher."))
         awaitResult<Void> { ws.close(it) }
         logger.debug("${objSimpName(this)} closed.")
-        state.set(EndpointStateEnum.CLOSED)
+        state = EndpointStateEnum.CLOSED
         defaultSubscriptionMap.clear()
     }
 
@@ -190,6 +204,7 @@ abstract class AbstractWebsocketDispatcher(val runtimeConfig: ExchangeRuntimeCon
      * 发送 pong 帧
      *
      * pong 帧的格式符合 RFC6455 的要求，目前只有 Binance 用到了这个方法。
+     * 运行在用户线程
      *
      * @param text String
      */
@@ -201,10 +216,15 @@ abstract class AbstractWebsocketDispatcher(val runtimeConfig: ExchangeRuntimeCon
     /**
      * 向 websocket 发送消息
      *
+     * 运行在用户线程
+     *
      * @receiver CoroutineScope
      * @param text String
      */
     override suspend fun send(text: String) {
+        if (state == EndpointStateEnum.CLOSED) {
+            reconfigure()
+        }
         sendChannel.send(text)
     }
 
@@ -229,7 +249,7 @@ abstract class AbstractWebsocketDispatcher(val runtimeConfig: ExchangeRuntimeCon
         return sub
     }
 
-    open fun newDispatcher(): AbstractWebsocketDispatcher {
+    open fun newChildDispatcher(): AbstractWebsocketDispatcher {
         throw NotImplementedError()
     }
 }

@@ -33,10 +33,10 @@ class TestHuobiSpotMarketWs : TestSubscribeMarketMethod() {
             }
         }
         delay(20_000)
-        l.cancel()
         // 因为 Huobi 的 Depth 订阅的全量数据可能会出错，多次尝试全量获取获取会浪费时间，30 秒内必须受到有效数据
         assert(depthList.size > 0)
         sub.unsubscribe()
+        l.cancel()
         logger.debug("sub.unsubscribe()")
     }
 
@@ -52,8 +52,8 @@ class TestHuobiSpotMarketWs : TestSubscribeMarketMethod() {
             }
         }
         delay(10_000)
-        l.cancel()
         sub.unsubscribe()
+        l.cancel()
         delay(1000)
     }
 
@@ -69,8 +69,8 @@ class TestHuobiSpotMarketWs : TestSubscribeMarketMethod() {
             }
         }
         delay(10_000)
-        l.cancel()
         sub.unsubscribe()
+        l.cancel()
         delay(1000)
     }
 
@@ -90,8 +90,8 @@ class TestHuobiSpotMarketWs : TestSubscribeMarketMethod() {
             }
         }
         delay(10_000)
-        l.cancel()
         sub.unsubscribe()
+        l.cancel()
         delay(1000)
     }
 }

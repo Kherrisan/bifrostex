@@ -4,15 +4,12 @@ import cn.kherrisan.bifrostex_client.core.common.ExchangeName
 import cn.kherrisan.bifrostex_client.core.common.iid
 import cn.kherrisan.bifrostex_client.core.websocket.AbstractWebsocketDispatcher
 import cn.kherrisan.bifrostex_client.core.websocket.DefaultSubscription
-import cn.kherrisan.bifrostex_client.exchange.binance.OKEX_EMPTY_TRADE
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
-
-val GATEIO_EMPTY_TRADE = OKEX_EMPTY_TRADE
 
 @Component
 open class GateioSpotMarketWebsocketDispatcher @Autowired constructor(

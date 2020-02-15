@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets
 
 @Component
 open class BinanceSpotMarketWebsocketDispatcher @Autowired constructor(
-        staticConfig: BinanceStaticConfiguration,
+        val staticConfig: BinanceStaticConfiguration,
         runtimeConfig: BinanceRuntimeConfig
 ) : AbstractWebsocketDispatcher(runtimeConfig) {
 
@@ -78,10 +78,14 @@ open class BinanceSpotMarketWebsocketDispatcher @Autowired constructor(
                 if (e.contains("kline")) {
                     e = "${e}_${obj["k"].asJsonObject["i"].asString}"
                 }
+                if (e.contains("depthUpdate")) {
+                    e = e.replace("Update", "@100ms")
+                }
                 val ch = "$s@$e".toLowerCase()
                 val sub = defaultSubscriptionMap[ch] as DefaultSubscription
                 sub.resolver(obj, sub)
             } catch (exception: Exception) {
+                logger.debug(defaultSubscriptionMap)
                 logger.error(exception)
                 logger.error(obj)
             }
@@ -119,5 +123,11 @@ open class BinanceSpotMarketWebsocketDispatcher @Autowired constructor(
             ))
         }
         return subscription
+    }
+
+    override fun newChildDispatcher(): AbstractWebsocketDispatcher {
+        val d = BinanceSpotMarketWebsocketDispatcher(staticConfig, runtimeConfig as BinanceRuntimeConfig)
+        childDispatcher.add(d)
+        return d
     }
 }

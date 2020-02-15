@@ -280,7 +280,7 @@ class KucoinSpotMarketService @Autowired constructor(
      * @return Subscription<Trade>
      */
     override suspend fun subscribeTrade(symbol: Symbol): Subscription<Trade> {
-        val dedicatedDispatcher = dispatcher.newDispatcher()
+        val dedicatedDispatcher = dispatcher.newChildDispatcher()
         val ch = "/market/match:${string(symbol)}"
         val sub = dedicatedDispatcher.newSubscription<Trade>(ch) { it, sub ->
             val data = it.asJsonObject["data"].asJsonObject

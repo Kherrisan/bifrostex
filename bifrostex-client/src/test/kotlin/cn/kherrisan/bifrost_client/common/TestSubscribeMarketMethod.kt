@@ -33,7 +33,7 @@ abstract class TestSubscribeMarketMethod {
         service = ExchangeFactory.build(name)
         spotMarketService = service.spotMarketService
         runBlocking {
-            service.spotMarketService.getCurrencies()
+            service.spotMarketService.getSymbols()
         }
         symbolMetaInfo = service.metaInfo.symbolMetaInfo[symbol]!!
     }

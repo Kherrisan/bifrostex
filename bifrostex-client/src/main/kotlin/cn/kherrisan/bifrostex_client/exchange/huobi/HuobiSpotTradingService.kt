@@ -356,7 +356,7 @@ class HuobiSpotTradingService @Autowired constructor(
                     "model" to "1"
             ))
         }
-        val newDispatcher = dispatcher.newDispatcher() as HuobiSpotTradingWebsocketDispatcher
+        val newDispatcher = dispatcher.newChildDispatcher() as HuobiSpotTradingWebsocketDispatcher
         val freeSubscription = newDispatcher.newAuthenticatedSubscription<SpotBalance>(ch) { elem, sub ->
             val obj = elem.asJsonObject
             val time = MyDate(obj["ts"].asLong)

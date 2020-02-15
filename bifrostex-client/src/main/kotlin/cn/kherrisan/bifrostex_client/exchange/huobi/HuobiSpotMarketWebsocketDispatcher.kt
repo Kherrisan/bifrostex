@@ -66,7 +66,7 @@ class HuobiSpotMarketWebsocketDispatcher @Autowired constructor(
         return subscription
     }
 
-    override fun newDispatcher(): AbstractWebsocketDispatcher {
+    override fun newChildDispatcher(): AbstractWebsocketDispatcher {
         val d = HuobiSpotMarketWebsocketDispatcher(staticConfig, runtimeConfig as HuobiRuntimeConfig)
         childDispatcher.add(d)
         return d

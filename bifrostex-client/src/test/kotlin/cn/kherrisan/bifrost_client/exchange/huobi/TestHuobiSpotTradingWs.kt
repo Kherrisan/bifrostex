@@ -19,7 +19,7 @@ class TestHuobiSpotTradingWs : TestSubscribeSpotTrading() {
     @Test
     fun `test subscribe balance of btc-usdt`() = runBlocking {
         val sub = spotTradingService.subscribeBalance(BTC_USDT)
-        launch {
+        val job = launch {
             while (true) {
                 val spotBalance = sub.receive()
                 logger.info(spotBalance)
@@ -27,6 +27,7 @@ class TestHuobiSpotTradingWs : TestSubscribeSpotTrading() {
         }
         delay(20000)
         sub.unsubscribe()
+        job.cancel()
         delay(1000)
     }
 
